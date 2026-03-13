@@ -1,0 +1,159 @@
+
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="UTF-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+							<style>
+								body {
+									background-color: white; /* Ensure the iframe has a white background */
+								}
+
+								
+							</style>
+                        </head>
+                        <body>
+                            <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MM to Inches</title>
+    <style>
+        body {
+            font-family: -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 320px;
+            text-align: center;
+        }
+
+        h2 { margin-bottom: 1rem; color: #333; }
+
+        .input-group { margin-bottom: 1.5rem; }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.2rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            text-align: center;
+            outline: none;
+        }
+
+        input[type="number"]:focus { border-color: #007bff; }
+
+        .result-area { margin-top: 1.5rem; padding: 1rem; background: #f9f9f9; border-radius: 8px; }
+
+        .main-text { font-size: 2rem; color: #007bff; font-weight: bold; line-height: 1.4; }
+        
+        .sub-text { display: block; margin-top: 5px; font-size: 0.85rem; color: #666; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h2>MM to Inches</h2>
+    <div class="input-group">
+        <input type="number" id="mmInput" placeholder="e.g. 12.7" oninput="convert()">
+    </div>
+    <div class="result-area">
+        <span class="main-text" id="output">-</span>
+        <span class="sub-text" id="decimal">0.0 in</span>
+    </div>
+</div>
+
+<script>
+    function gcd(a, b) {
+        return b ? gcd(b, a % b) : a;
+    }
+
+    function reduceFraction(numerator, denominator) {
+        const divisor = gcd(numerator, denominator);
+        return {
+            numerator: numerator / divisor,
+            denominator: denominator / divisor
+        };
+    }
+
+    function convert() {
+        const val = parseFloat(document.getElementById('mmInput').value);
+        
+        if (!val || isNaN(val)) {
+            document.getElementById('output').innerText = "-";
+            return;
+        }
+
+        const inches = val / 25.4;
+        const whole = Math.floor(inches);
+        let remainder = inches - whole;
+
+        // Handle special case where it's a whole inch
+        if (Math.abs(remainder) < 0.001) {
+            document.getElementById('output').innerText = whole + " in";
+            document.getElementById('decimal').innerText = inches.toFixed(3) + " in";
+            return;
+        }
+
+        // Use denominators: 32, 16, 8, 4, 2 (doubling down to 1/2)
+        const denominators = [32, 16, 8, 4, 2];
+        let bestDenom = 32;
+        let minDiff = Infinity;
+
+        // Find the closest fraction
+        for (let denom of denominators) {
+            const numerator = Math.round(remainder * denom);
+            const approx = numerator / denom;
+            const diff = Math.abs(remainder - approx);
+            
+            if (diff < minDiff) {
+                minDiff = diff;
+                bestDenom = denom;
+            }
+        }
+
+        // Calculate the actual numerator
+        let numerator = Math.round(remainder * bestDenom);
+
+        // Reduce the fraction
+        const reduced = reduceFraction(numerator, bestDenom);
+        
+        // Format result
+        let result = "";
+        if (whole > 0) {
+            result = whole + "-" + reduced.numerator + "/" + reduced.denominator;
+        } else {
+            result = reduced.numerator + "/" + reduced.denominator;
+        }
+
+        document.getElementById('output').innerText = result;
+        document.getElementById('decimal').innerText = inches.toFixed(3) + " in";
+    }
+
+    // Paste support
+    document.getElementById('mmInput').addEventListener('paste', () => { 
+        setTimeout(convert, 50); 
+    });
+</script>
+</body>
+</html>
+
+							<script>
+                            	
+							</script>
+                        </body>
+                        </html>
+                    
