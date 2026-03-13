@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zero My Scope</title>
+    <style>
+        body {
+            font-family: -apple-system, sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .card {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 320px;
+            text-align: center;
+        }
+        h2 {
+            margin: 0 0 0.25rem;
+            color: #333;
+            font-size: 1.3rem;
+        }
+        .subtitle {
+            font-size: 0.78rem;
+            color: #aaa;
+            margin-bottom: 1.5rem;
+        }
+        .input-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+        label {
+            display: block;
+            font-size: 0.82rem;
+            color: #555;
+            margin-bottom: 4px;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        input[type="number"], select {
+            width: 100%;
+            padding: 11px 44px 11px 12px;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            outline: none;
+            appearance: none;
+            background: white;
+        }
+        select {
+            padding-right: 12px;
+            cursor: pointer;
+        }
+        input[type="number"]:focus, select:focus { border-color: #007bff; }
+        .input-unit {
+            position: absolute;
+            right: 12px;
+            font-size: 0.85rem;
+            color: #aaa;
+            pointer-events: none;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #0069d9; }
+        .result-area {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 4px 0;
+        }
+        .result-row + .result-row {
+            border-top: 1px solid #eee;
+            margin-top: 8px;
+            padding-top: 12px;
+        }
+        .result-label {
+            font-size: 0.82rem;
+            color: #666;
+        }
+        .result-value {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #007bff;
+            line-height: 1;
+        }
+        .result-unit {
+            font-size: 0.78rem;
+            color: #aaa;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <h2>&#8982; Zero My Scope</h2>
+    <p class="subtitle">1/4 MOA &amp; 0.1 Milliradian turrets</p>
+
+    <div class="input-group">
+        <label for="unit">Turret adjustment unit</label>
+        <select id="unit" onchange="calculate()">
+            <option value="moa">1/4 MOA</option>
+            <option value="half_moa">1/2 MOA</option>
+            <option value="mil">0.1 Milliradian</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label for="range">Target range</label>
+        <div class="input-wrapper">
+            <input type="number" id="range" placeholder="e.g. 100" oninput="calculate()">
+            <span class="input-unit">yds</span>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label for="windage">Windage impact offset</label>
+        <div class="input-wrapper">
+            <input type="number" id="windage" placeholder="e.g. 2.0" oninput="calculate()">
+            <span class="input-unit">in</span>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label for="elevation">Elevation impact offset</label>
+        <div class="input-wrapper">
+            <input type="number" id="elevation" placeholder="e.g. 1.5" oninput="calculate()">
+            <span class="input-unit">in</span>
+        </div>
+    </div>
+
+    <div class="result-area">
+        <div class="result-row">
+            <span class="result-label">Windage</span>
+            <div>
+                <div class="result-value" id="windage-result">-</div>
+                <div class="result-unit">clicks</div>
+            </div>
+        </div>
+        <div class="result-row">
+            <span class="result-label">Elevation</span>
+            <div>
+                <div class="result-value" id="elevation-result">-</div>
+                <div class="result-unit">clicks</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function calculate() {
+        const range = parseFloat(document.getElementById("range").value);
+        const windageOffset = parseFloat(document.getElementById("windage").value);
+        const elevationOffset = parseFloat(document.getElementById("elevation").value);
+        const unit = document.getElementById("unit").value;
+
+        const wEl = document.getElementById("windage-result");
+        const eEl = document.getElementById("elevation-result");
+
+        if (!range || !windageOffset && windageOffset !== 0 || !elevationOffset && elevationOffset !== 0) {
+            wEl.innerText = "-";
+            eEl.innerText = "-";
+            return;
+        }
+
+        let w, e;
+        if (unit === "moa") {
+            const clickSize = (Math.PI * 2 * range * 36) / (21600 * 4);
+            w = Math.round(windageOffset / clickSize);
+            e = Math.round(elevationOffset / clickSize);
+        } else if (unit === "half_moa") {
+            const clickSize = (Math.PI * 2 * range * 36) / (21600 * 2);
+            w = Math.round(windageOffset / clickSize);
+            e = Math.round(elevationOffset / clickSize);
+        } else {
+            const clickSize = (range * 36) / 10000;
+            w = Math.round(windageOffset / clickSize);
+            e = Math.round(elevationOffset / clickSize);
+        }
+
+        wEl.innerText = w;
+        eEl.innerText = e;
+    }
+</script>
+</body>
+</html>
