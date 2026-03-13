@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Tools</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, sans-serif;
+            background: #f4f4f9;
+            min-height: 100vh;
+            padding: 2rem 1rem;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+            font-size: 1.6rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 1rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+        a.tool-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            padding: 1.2rem 1rem;
+            text-decoration: none;
+            color: #333;
+            text-align: center;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        a.tool-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.13);
+        }
+        .tool-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+        .tool-name { font-weight: 600; font-size: 0.95rem; }
+        .tool-desc { font-size: 0.75rem; color: #888; margin-top: 0.3rem; }
+    </style>
+</head>
+<body>
+    <h1>My Tools</h1>
+    <div class="grid">
+
+        <a class="tool-card" href="metric2fraction.html">
+            <div class="tool-icon">📏</div>
+            <div class="tool-name">MM to Inches</div>
+            <div class="tool-desc">Metric to mixed number</div>
+        </a>
+
+        <!-- Add new tools below this line:
+        <a class="tool-card" href="yourtool.html">
+            <div class="tool-icon">🔧</div>
+            <div class="tool-name">Tool Name</div>
+            <div class="tool-desc">Short description</div>
+        </a>
+        -->
+
+    </div>
+</body>
+</html>
