@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiber Stick Map</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+#toolbar {
+  background: #16213e;
+  padding: 8px 12px;
+  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+  border-bottom: 2px solid #0f3460; flex-shrink: 0;
+}
+.tb-group { display: flex; gap: 6px; align-items: center; }
+.tb-sep { width: 1px; height: 28px; background: #0f3460; }
+button {
+  background: #0f3460; color: #eee; border: 1px solid #1a4a8a;
+  padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;
+}
+button:hover { background: #1a5299; }
+button.active { background: #e94560; border-color: #e94560; }
+label { font-size: 12px; color: #aaa; }
+input[type=text] {
+  background: #0f3460; border: 1px solid #1a4a8a; color: #eee;
+  padding: 4px 8px; border-radius: 4px; width: 130px; font-size: 12px;
+}
+input[type=color] { width: 32px; height: 28px; border: none; cursor: pointer; border-radius: 4px; padding: 1px; }
+select {
+  background: #0f3460; border: 1px solid #1a4a8a; color: #eee;
+  padding: 4px 6px; border-radius: 4px; font-size: 12px;
+}
+#hint { font-size: 11px; color: #aaa; padding: 2px 0; width: 100%; }
+
+#main { display: flex; flex: 1; overflow: hidden; }
+#canvas-wrap { flex: 1; overflow: hidden; position: relative; }
+canvas { display: block; }
+
+/* Import panel */
+#import-panel {
+  width: 260px; background: #16213e; border-left: 2px solid #0f3460;
+  display: none; flex-direction: column; padding: 12px; gap: 8px; flex-shrink: 0;
+}
+#import-panel.open { display: flex; }
+#import-panel h3 { font-size: 13px; color: #00d4ff; margin-bottom: 2px; }
+#import-panel p { font-size: 11px; color: #888; line-height: 1.5; }
+#site-list-input {
+  flex: 1; min-height: 180px; background: #0f3460; border: 1px solid #1a4a8a;
+  color: #eee; padding: 8px; border-radius: 4px; font-size: 12px;
+  resize: none; font-family: monospace;
+}
+#import-panel .btn-row { display: flex; gap: 6px; }
+#import-panel .btn-row button { flex: 1; }
+.shape-row { display: flex; gap: 6px; align-items: center; }
+.shape-row label { font-size: 11px; }
+
+/* Popup editor (shared for links and nodes) */
+#popup-editor {
+  display: none; position: fixed; background: #16213e;
+  border: 1px solid #1a4a8a; border-radius: 8px; padding: 12px;
+  z-index: 200; box-shadow: 0 4px 20px #0008; min-width: 240px;
+}
+#popup-editor h4 { font-size: 12px; color: #00d4ff; margin-bottom: 8px; }
+.pe-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.pe-row label { font-size: 11px; color: #aaa; width: 48px; flex-shrink: 0; }
+.pe-row input[type=text] { flex: 1; min-width: 0; width: auto; }
+.pe-row input[type=color] { width: 32px; height: 28px; border: none; border-radius: 4px; padding: 1px; cursor: pointer; }
+.pe-row select { flex: 1; }
+.pe-btns { display: flex; gap: 6px; margin-top: 8px; }
+.pe-btns button { flex: 1; padding: 5px; font-size: 12px; min-height: 30px; }
+
+@media print {
+  body { background: white; color: black; }
+  #toolbar, #import-panel { display: none !important; }
+  #main { display: block; }
+  canvas { width: 100% !important; height: auto !important; }
+}
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <div class="tb-group">
+    <button id="btn-add" class="active" onclick="setMode('add')">＋ Add Site</button>
+    <button id="btn-connect" onclick="setMode('connect')">⟷ Connect</button>
+    <button id="btn-edit" onclick="setMode('edit')">✏️ Edit</button>
+    <button id="btn-move" onclick="setMode('move')">✥ Move</button>
+    <button id="btn-delete" onclick="setMode('delete')">✕ Delete</button>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <label>Name:</label>
+    <input type="text" id="site-name" value="Site" />
+  </div>
+  <div class="tb-group">
+    <label>Node:</label>
+    <input type="color" id="node-color" value="#00d4ff" />
+    <select id="node-shape">
+      <option value="circle">Circle</option>
+      <option value="square">Square</option>
+      <option value="diamond">Diamond</option>
+      <option value="house">Hub</option>
+    </select>
+  </div>
+  <div class="tb-group">
+    <label>Link:</label>
+    <input type="color" id="link-color" value="#ffffff" />
+    <select id="link-style">
+      <option value="solid">Solid</option>
+      <option value="dashed">Dashed</option>
+      <option value="dotted">Dotted</option>
+    </select>
+  </div>
+  <div class="tb-sep"></div>
+  <div class="tb-group">
+    <button onclick="toggleImport()">📋 Import Sites</button>
+    <button onclick="autoLayout()">⬡ Auto Layout</button>
+    <label>BG:</label>
+    <input type="color" id="bg-color" value="#1a1a2e" title="Background color" oninput="setBg(this.value)" />
+    <button onclick="printMap()">🖨 Print</button>
+    <button onclick="saveMap()">💾 Save</button>
+    <button onclick="loadMap()">📂 Load</button>
+    <button onclick="clearAll()" style="background:#5a1a1a;border-color:#8a2020;">🗑 Clear</button>
+  </div>
+  <div id="hint">Click canvas to place a site.</div>
+</div>
+
+<div id="main">
+  <div id="canvas-wrap">
+    <canvas id="cvs"></canvas>
+  </div>
+
+  <div id="import-panel">
+    <h3>📋 Import Sites</h3>
+    <p>Enter one site name per line. You can also paste a comma or newline separated list.</p>
+    <textarea id="site-list-input" placeholder="HUB-1&#10;Node-A&#10;Node-B&#10;Node-C&#10;Term-1&#10;Term-2"></textarea>
+    <div class="shape-row">
+      <label>Default shape:</label>
+      <select id="import-shape">
+        <option value="circle">Circle</option>
+        <option value="square">Square</option>
+        <option value="diamond">Diamond</option>
+        <option value="house">Hub</option>
+      </select>
+      <input type="color" id="import-color" value="#00d4ff" />
+    </div>
+    <div class="btn-row">
+      <button onclick="importSites()">✔ Add Sites</button>
+      <button onclick="toggleImport()">✕ Close</button>
+    </div>
+    <p style="color:#f0c040; margin-top:4px;">Existing sites are preserved. Sites are laid out in a grid — use Auto Layout or Move to arrange.</p>
+  </div>
+</div>
+
+<div id="popup-editor">
+  <h4 id="pe-title">Edit</h4>
+  <div id="pe-node-fields">
+    <div class="pe-row"><label>Name</label><input type="text" id="pe-name" /></div>
+    <div class="pe-row"><label>Color</label><input type="color" id="pe-color" /></div>
+    <div class="pe-row"><label>Shape</label>
+      <select id="pe-shape">
+        <option value="circle">Circle</option>
+        <option value="square">Square</option>
+        <option value="diamond">Diamond</option>
+        <option value="house">Hub</option>
+      </select>
+    </div>
+  </div>
+  <div id="pe-link-fields">
+    <div class="pe-row"><label>Label</label><input type="text" id="pe-label" placeholder="e.g. 1200ft / 12F" /></div>
+    <div class="pe-row"><label>Color</label><input type="color" id="pe-lcolor" /></div>
+    <div class="pe-row"><label>Style</label>
+      <select id="pe-lstyle">
+        <option value="solid">Solid</option>
+        <option value="dashed">Dashed</option>
+        <option value="dotted">Dotted</option>
+      </select>
+    </div>
+  </div>
+  <div class="pe-btns">
+    <button onclick="savePopup()">✔ Save</button>
+    <button onclick="closePopup()">✕ Cancel</button>
+  </div>
+</div>
+
+<script>
+const cvs = document.getElementById('cvs');
+const ctx = cvs.getContext('2d');
+const wrap = document.getElementById('canvas-wrap');
+
+let nodes = [], links = [];
+let mode = 'add';
+let connectStart = null;
+let moveSelected = null;
+let hoverNode = null, hoverLink = null;
+let idCounter = 1;
+
+let bgColor = '#1a1a2e';
+
+function setBg(val) {
+  bgColor = val;
+  draw();
+}
+
+function resize() {
+  cvs.width = wrap.clientWidth;
+  cvs.height = wrap.clientHeight;
+  draw();
+}
+window.addEventListener('resize', resize);
+resize();
+
+// ── Mode ──────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  connectStart = null;
+  moveSelected = null;
+  closePopup();
+  dragging = null;
+  ['add','connect','move','delete'].forEach(x =>
+    document.getElementById('btn-'+x).classList.toggle('active', x === m)
+  );
+  const hints = {
+    add: 'Click canvas to place a site. Double-click a site to rename it.',
+    connect: 'Click a site to start a link, then click another site to complete it.',
+    move: 'Click a site to select it (it will glow), then click where you want to move it.',
+    delete: 'Click a site or link line to delete it.'
+  };
+  document.getElementById('hint').textContent = hints[m];
+  cvs.style.cursor = m === 'move' ? 'grab' : 'crosshair';
+  draw();
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function nodeAt(x, y) {
+  // Search in reverse so top-drawn nodes get priority
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    if (Math.hypot(n.x - x, n.y - y) < 18) return n;
+  }
+  return null;
+}
+
+function linkNear(x, y) {
+  for (const l of links) {
+    const a = nodes.find(n => n.id === l.a);
+    const b = nodes.find(n => n.id === l.b);
+    if (!a || !b) continue;
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx*dx + dy*dy;
+    if (len2 < 1) continue;
+    const t = Math.max(0, Math.min(1, ((x-a.x)*dx + (y-a.y)*dy) / len2));
+    const px = a.x + t*dx - x, py = a.y + t*dy - y;
+    if (Math.hypot(px, py) < 8) return l;
+  }
+  return null;
+}
+
+function pos(e) {
+  const r = cvs.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
+
+// ── Canvas events ─────────────────────────────────────────────────
+cvs.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const {x, y} = pos(e);
+
+  if (mode === 'edit') {
+    const n = nodeAt(x, y);
+    if (n) { openPopup('node', n, e.clientX, e.clientY); return; }
+    const l = linkNear(x, y);
+    if (l) { openPopup('link', l, e.clientX, e.clientY); }
+    return;
+  }
+
+  if (mode === 'add') {
+    const name = document.getElementById('site-name').value.trim() || 'Site';
+    nodes.push({
+      id: uid(), x, y, name,
+      color: document.getElementById('node-color').value,
+      shape: document.getElementById('node-shape').value
+    });
+    draw();
+    return;
+  }
+
+  if (mode === 'connect') {
+    const n = nodeAt(x, y);
+    if (!n) return;
+    if (!connectStart) {
+      connectStart = n;
+      draw();
+    } else if (connectStart.id !== n.id) {
+      const exists = links.find(l =>
+        (l.a===connectStart.id && l.b===n.id) || (l.a===n.id && l.b===connectStart.id)
+      );
+      if (!exists) {
+        const newLink = {
+          id: uid(), a: connectStart.id, b: n.id, label: '',
+          color: document.getElementById('link-color').value,
+          style: document.getElementById('link-style').value
+        };
+        links.push(newLink);
+        connectStart = null;
+        draw();
+        promptLinkLabel(newLink, e.clientX, e.clientY);
+      } else {
+        connectStart = null;
+        draw();
+      }
+    } else {
+      connectStart = null;
+      draw();
+    }
+    return;
+  }
+
+  if (mode === 'move') {
+    const n = nodeAt(x, y);
+    if (n) {
+      if (!moveSelected) {
+        // First click — select node
+        moveSelected = n;
+        draw();
+      } else if (moveSelected.id === n.id) {
+        // Clicked same node — deselect
+        moveSelected = null;
+        draw();
+      } else {
+        // Clicked a different node — move selected to that node's spot? No —
+        // treat as new selection instead
+        moveSelected = n;
+        draw();
+      }
+    } else if (moveSelected) {
+      // Second click on empty space — move node here
+      moveSelected.x = x;
+      moveSelected.y = y;
+      moveSelected = null;
+      draw();
+    }
+    return;
+  }
+
+  if (mode === 'delete') {
+    const n = nodeAt(x, y);
+    if (n) {
+      nodes = nodes.filter(nd => nd.id !== n.id);
+      links = links.filter(l => l.a !== n.id && l.b !== n.id);
+      draw();
+      return;
+    }
+    const l = linkNear(x, y);
+    if (l) {
+      links = links.filter(lk => lk.id !== l.id);
+      draw();
+    }
+  }
+});
+
+cvs.addEventListener('mousemove', e => {
+  const {x, y} = pos(e);
+  const prevHN = hoverNode, prevHL = hoverLink;
+  hoverNode = nodeAt(x, y);
+  hoverLink = hoverNode ? null : linkNear(x, y);
+  if (hoverNode !== prevHN || hoverLink !== prevHL) draw();
+});
+
+cvs.addEventListener('mouseup', () => {});
+
+// ── Touch support ─────────────────────────────────────────────────
+function touchPos(e) {
+  const r = cvs.getBoundingClientRect();
+  const t = e.changedTouches[0];
+  return { x: t.clientX - r.left, y: t.clientY - r.top, clientX: t.clientX, clientY: t.clientY };
+}
+
+let lastTap = 0;
+cvs.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const {x, y, clientX, clientY} = touchPos(e);
+  // Detect double-tap (within 300ms)
+  const now = Date.now();
+  const dt = now - lastTap;
+  lastTap = now;
+  if (dt < 300) return; // ignore double-tap, editing is mode-based
+  // Synthesize mousedown
+  cvs.dispatchEvent(new MouseEvent('mousedown', {
+    bubbles: false, clientX, clientY, button: 0
+  }));
+}, { passive: false });
+
+cvs.addEventListener('touchend', e => {
+  e.preventDefault();
+}, { passive: false });
+
+cvs.addEventListener('touchmove', e => {
+  e.preventDefault();
+}, { passive: false });
+
+cvs.addEventListener('dblclick', e => { /* editing handled by Edit mode */ });
+
+// ── Popup editor (nodes + links) ──────────────────────────────────
+let popupTarget = null; // { type: 'node'|'link', obj }
+
+function openPopup(type, obj, cx, cy) {
+  popupTarget = { type, obj };
+  const pe = document.getElementById('popup-editor');
+  document.getElementById('pe-title').textContent = type === 'node' ? '✏️ Edit Site' : '✏️ Edit Link';
+  document.getElementById('pe-node-fields').style.display = type === 'node' ? '' : 'none';
+  document.getElementById('pe-link-fields').style.display = type === 'link' ? '' : 'none';
+  if (type === 'node') {
+    document.getElementById('pe-name').value = obj.name;
+    document.getElementById('pe-color').value = obj.color;
+    document.getElementById('pe-shape').value = obj.shape;
+  } else {
+    document.getElementById('pe-label').value = obj.label || '';
+    document.getElementById('pe-lcolor').value = obj.color || '#ffffff';
+    document.getElementById('pe-lstyle').value = obj.style || 'solid';
+  }
+  pe.style.display = 'block';
+  const pw = 260, ph = 180;
+  pe.style.left = Math.min(cx, window.innerWidth - pw - 8) + 'px';
+  pe.style.top = Math.max(8, Math.min(cy, window.innerHeight - ph - 8)) + 'px';
+  setTimeout(() => {
+    const first = type === 'node'
+      ? document.getElementById('pe-name')
+      : document.getElementById('pe-label');
+    first.focus(); first.select();
+  }, 10);
+}
+
+function savePopup() {
+  if (!popupTarget) return;
+  const { type, obj } = popupTarget;
+  if (type === 'node') {
+    const nm = document.getElementById('pe-name').value.trim();
+    if (nm) obj.name = nm;
+    obj.color = document.getElementById('pe-color').value;
+    obj.shape = document.getElementById('pe-shape').value;
+  } else {
+    obj.label = document.getElementById('pe-label').value.trim();
+    obj.color = document.getElementById('pe-lcolor').value;
+    obj.style = document.getElementById('pe-lstyle').value;
+  }
+  closePopup();
+  draw();
+}
+
+function closePopup() {
+  popupTarget = null;
+  document.getElementById('popup-editor').style.display = 'none';
+}
+
+// Enter to save, Escape to cancel
+document.getElementById('popup-editor').addEventListener('keydown', e => {
+  if (e.key === 'Enter') savePopup();
+  if (e.key === 'Escape') closePopup();
+});
+
+// Keep old names as aliases so nothing else breaks
+function promptLinkLabel(link, cx, cy) { openPopup('link', link, cx, cy); }
+function saveLinkLabel() { savePopup(); }
+function closeLinkEditor() { closePopup(); }
+
+// ── Draw ──────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+  // Grid
+  ctx.strokeStyle = blendGridColor(bgColor);
+  ctx.lineWidth = 1;
+  for (let x = 0; x < cvs.width; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,cvs.height); ctx.stroke(); }
+  for (let y = 0; y < cvs.height; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cvs.width,y); ctx.stroke(); }
+
+  // Links
+  links.forEach(l => {
+    const a = nodes.find(n => n.id === l.a), b = nodes.find(n => n.id === l.b);
+    if (!a || !b) return;
+    const hot = hoverLink && hoverLink.id === l.id;
+    ctx.beginPath();
+    ctx.strokeStyle = hot ? '#ffff00' : (l.color || '#fff');
+    ctx.lineWidth = hot ? 3 : 2;
+    if (l.style === 'dashed') ctx.setLineDash([10,5]);
+    else if (l.style === 'dotted') ctx.setLineDash([3,5]);
+    else ctx.setLineDash([]);
+    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+    ctx.setLineDash([]);
+
+    if (l.label) {
+      const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
+      const ang = Math.atan2(b.y-a.y, b.x-a.x);
+      ctx.save();
+      ctx.translate(mx, my);
+      // Keep text always readable (not upside down)
+      const flip = Math.abs(ang) > Math.PI/2;
+      ctx.rotate(flip ? ang + Math.PI : ang);
+      ctx.font = 'bold 11px Arial';
+      const tw = ctx.measureText(l.label).width;
+      ctx.fillStyle = 'rgba(10,10,30,0.8)';
+      ctx.fillRect(-tw/2-3, -13, tw+6, 15);
+      ctx.fillStyle = hot ? '#ffff00' : '#f0c040';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText(l.label, 0, 0);
+      ctx.restore();
+    }
+  });
+
+  // Connect-start highlight
+  if (connectStart) {
+    ctx.beginPath();
+    ctx.arc(connectStart.x, connectStart.y, 22, 0, Math.PI*2);
+    ctx.strokeStyle = '#e94560';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4,3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Nodes
+  nodes.forEach(n => {
+    const hot = (hoverNode && hoverNode.id === n.id) || (connectStart && connectStart.id === n.id);
+    const selected = moveSelected && moveSelected.id === n.id;
+    const r = 12;
+    ctx.save();
+    ctx.translate(n.x, n.y);
+    ctx.beginPath();
+    if (n.shape === 'circle') {
+      ctx.arc(0, 0, r, 0, Math.PI*2);
+    } else if (n.shape === 'square') {
+      ctx.rect(-r, -r, r*2, r*2);
+    } else if (n.shape === 'diamond') {
+      ctx.moveTo(0, -r*1.4); ctx.lineTo(r*1.1, 0); ctx.lineTo(0, r*1.4); ctx.lineTo(-r*1.1, 0); ctx.closePath();
+    } else if (n.shape === 'house') {
+      ctx.moveTo(-r, r); ctx.lineTo(-r, -2); ctx.lineTo(0, -r-5); ctx.lineTo(r, -2); ctx.lineTo(r, r); ctx.closePath();
+    }
+    if (hot || selected) { ctx.shadowColor = selected ? '#ffff00' : n.color; ctx.shadowBlur = selected ? 24 : 18; }
+    ctx.fillStyle = selected ? '#ffff00' : n.color;
+    ctx.fill();
+    ctx.strokeStyle = hot ? '#fff' : 'rgba(0,0,0,0.6)';
+    ctx.lineWidth = hot ? 2 : 1.5;
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    // Label
+    ctx.font = 'bold 11px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const tw = ctx.measureText(n.name).width;
+    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+    ctx.fillRect(-tw/2-3, r+3, tw+6, 14);
+    ctx.fillStyle = '#fff';
+    ctx.fillText(n.name, 0, r+4);
+    ctx.restore();
+  });
+}
+
+// ── Import Sites ──────────────────────────────────────────────────
+function toggleImport() {
+  const p = document.getElementById('import-panel');
+  p.classList.toggle('open');
+}
+
+function importSites() {
+  const raw = document.getElementById('site-list-input').value;
+  const shape = document.getElementById('import-shape').value;
+  const color = document.getElementById('import-color').value;
+
+  // Split by newlines or commas, clean up
+  const names = raw.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
+  if (names.length === 0) return;
+
+  // Grid layout for new nodes
+  const cols = Math.ceil(Math.sqrt(names.length));
+  const colW = 120, rowH = 90;
+  const W = cvs.width, H = cvs.height;
+  const totalW
