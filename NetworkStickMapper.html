@@ -5,130 +5,111 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Fiber Stick Map</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-
-/* ── Top bars ── */
-#bar-file, #bar-format {
-  background: #16213e;
-  padding: 5px 10px;
-  display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
-  border-bottom: 1px solid #0f3460; flex-shrink: 0;
+:root {
+  --bg:#bdbdbd; --ui:#c0c0c0; --ui-border:#808080; --ui-text:#000;
+  --btn:#c0c0c0; --btn-border:#808080; --btn-active:#000080; --btn-active-text:#fff;
+  --input:#fff; --input-border:#808080; --input-text:#000;
+  --label:#000; --bar-label:#444; --hint:#222; --section-title:#555;
 }
-#bar-file { border-bottom: 1px solid #0f3460; }
-#bar-format { border-bottom: 2px solid #0f3460; }
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:Arial,sans-serif; background:var(--bg); color:var(--ui-text);
+  height:100vh; display:flex; flex-direction:column; overflow:hidden; }
 
-.bar-label { font-size: 11px; color: #666; font-weight: bold; letter-spacing: 0.5px; padding-right: 2px; }
-.tb-sep { width: 1px; height: 26px; background: #0f3460; margin: 0 2px; }
+#bar-file, #bar-format {
+  background:var(--ui); padding:5px 10px;
+  display:flex; flex-wrap:wrap; gap:5px; align-items:center;
+  border-bottom:1px solid var(--ui-border); flex-shrink:0;
+}
+#bar-format { border-bottom:2px solid var(--ui-border); }
+.bar-label { font-size:11px; color:var(--bar-label); font-weight:bold; letter-spacing:.5px; padding-right:2px; }
+.tb-sep { width:1px; height:26px; background:var(--ui-border); margin:0 2px; }
 
 button {
-  background: #0f3460; color: #eee; border: 1px solid #1a4a8a;
-  padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
-  min-height: 32px; touch-action: manipulation; user-select: none; white-space: nowrap;
+  background:var(--btn); color:var(--ui-text); border:1px solid var(--btn-border);
+  padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;
+  min-height:32px; touch-action:manipulation; user-select:none; white-space:nowrap;
 }
-button:hover, button:active { background: #1a5299; }
-button.active { background: #e94560; border-color: #e94560; }
+button:hover { filter:brightness(1.08); }
+button.active { background:var(--btn-active); border-color:var(--btn-active); color:var(--btn-active-text); }
 
-input[type=text] {
-  background: #0f3460; border: 1px solid #1a4a8a; color: #eee;
-  padding: 4px 7px; border-radius: 4px; font-size: 12px; min-height: 32px;
+input[type=text], textarea {
+  background:var(--input); border:1px solid var(--input-border); color:var(--input-text);
+  padding:4px 7px; border-radius:4px; font-size:12px; min-height:32px;
 }
-input[type=color] {
-  width: 32px; height: 32px; border: none; cursor: pointer;
-  border-radius: 4px; padding: 2px; touch-action: manipulation;
-}
+input[type=color] { width:32px; height:32px; border:none; cursor:pointer; border-radius:4px; padding:2px; touch-action:manipulation; }
 select {
-  background: #0f3460; border: 1px solid #1a4a8a; color: #eee;
-  padding: 4px 6px; border-radius: 4px; font-size: 12px; min-height: 32px;
+  background:var(--input); border:1px solid var(--input-border); color:var(--input-text);
+  padding:4px 6px; border-radius:4px; font-size:12px; min-height:32px;
 }
-label { font-size: 12px; color: #aaa; white-space: nowrap; }
+label { font-size:12px; color:var(--label); white-space:nowrap; }
 
-/* ── Main area ── */
-#main { display: flex; flex: 1; overflow: hidden; }
-
-/* ── Left sidebar (placement controls) ── */
+#main { display:flex; flex:1; overflow:hidden; }
 #sidebar {
-  width: 130px; background: #16213e; border-right: 2px solid #0f3460;
-  display: flex; flex-direction: column; gap: 4px; padding: 8px 6px;
-  flex-shrink: 0; overflow-y: auto;
+  width:130px; background:var(--ui); border-right:2px solid var(--ui-border);
+  display:flex; flex-direction:column; gap:4px; padding:8px 6px;
+  flex-shrink:0; overflow-y:auto;
 }
-#sidebar .section-title {
-  font-size: 10px; color: #555; font-weight: bold; letter-spacing: 0.6px;
-  text-transform: uppercase; padding: 4px 0 2px 2px;
-  border-bottom: 1px solid #0f3460; margin-bottom: 2px;
-}
-#sidebar button { width: 100%; text-align: left; padding: 7px 8px; font-size: 12px; }
-#hint-box {
-  margin-top: auto; background: #0d1a33; border-radius: 4px;
-  padding: 7px 8px; font-size: 11px; color: #888; line-height: 1.5;
-  border: 1px solid #0f3460;
-}
+#sidebar .sec { font-size:10px; color:var(--section-title); font-weight:bold;
+  letter-spacing:.6px; text-transform:uppercase; padding:4px 0 2px 2px;
+  border-bottom:1px solid var(--ui-border); margin-bottom:2px; }
+#sidebar button { width:100%; text-align:left; padding:7px 8px; font-size:12px; }
+#hint-box { margin-top:auto; background:var(--bg); border-radius:4px;
+  padding:7px 8px; font-size:11px; color:var(--hint); line-height:1.5;
+  border:1px solid var(--ui-border); }
 
-/* ── Canvas ── */
-#canvas-wrap { flex: 1; overflow: hidden; position: relative; }
-canvas { display: block; touch-action: none; }
+#canvas-wrap { flex:1; overflow:hidden; position:relative; cursor:crosshair; }
+canvas { display:block; touch-action:none; }
 
-/* ── Import panel (slides in from right) ── */
 #import-panel {
-  width: 240px; background: #16213e; border-left: 2px solid #0f3460;
-  display: none; flex-direction: column; padding: 12px; gap: 8px;
-  flex-shrink: 0; overflow-y: auto;
+  width:240px; background:var(--ui); border-left:2px solid var(--ui-border);
+  display:none; flex-direction:column; padding:12px; gap:8px; flex-shrink:0; overflow-y:auto;
 }
-#import-panel.open { display: flex; }
-#import-panel h3 { font-size: 13px; color: #00d4ff; }
-#import-panel p { font-size: 11px; color: #888; line-height: 1.5; }
-#site-list-input {
-  flex: 1; min-height: 160px; background: #0f3460; border: 1px solid #1a4a8a;
-  color: #eee; padding: 8px; border-radius: 4px; font-size: 12px;
-  resize: none; font-family: monospace;
-}
-.btn-row { display: flex; gap: 6px; }
-.btn-row button { flex: 1; }
+#import-panel.open { display:flex; }
+#import-panel h3 { font-size:13px; color:var(--btn-active); }
+#import-panel p { font-size:11px; color:var(--hint); line-height:1.5; }
+#site-list-input { flex:1; min-height:160px; padding:8px; font-family:monospace; resize:none;
+  background:var(--input); border:1px solid var(--input-border); color:var(--input-text);
+  border-radius:4px; font-size:12px; }
+.btn-row { display:flex; gap:6px; }
+.btn-row button { flex:1; }
 
-/* ── Popup editor ── */
 #popup-editor {
-  display: none; position: fixed; background: #16213e;
-  border: 1px solid #1a4a8a; border-radius: 8px; padding: 12px;
-  z-index: 200; box-shadow: 0 4px 20px #0008; min-width: 230px;
+  display:none; position:fixed; background:var(--ui);
+  border:1px solid var(--ui-border); border-radius:8px; padding:12px;
+  z-index:200; box-shadow:0 4px 20px #0008; min-width:230px;
 }
-#popup-editor h4 { font-size: 12px; color: #00d4ff; margin-bottom: 8px; }
-.pe-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.pe-row label { font-size: 11px; color: #aaa; width: 46px; flex-shrink: 0; }
-.pe-row input[type=text] { flex: 1; min-width: 0; width: auto; }
-.pe-row input[type=color] { width: 32px; height: 28px; }
-.pe-row select { flex: 1; }
-.pe-btns { display: flex; gap: 6px; margin-top: 8px; }
-.pe-btns button { flex: 1; padding: 7px; font-size: 12px; }
+#popup-editor h4 { font-size:12px; color:var(--btn-active); margin-bottom:8px; }
+.pe-row { display:flex; align-items:center; gap:6px; margin-bottom:6px; }
+.pe-row label { font-size:11px; color:var(--label); width:46px; flex-shrink:0; }
+.pe-row input[type=text] { flex:1; min-width:0; width:auto; }
+.pe-row input[type=color] { width:32px; height:28px; }
+.pe-row select { flex:1; }
+.pe-btns { display:flex; gap:6px; margin-top:8px; }
+.pe-btns button { flex:1; padding:7px; font-size:12px; }
 </style>
 </head>
 <body>
 
-<!-- Row 1: File controls -->
 <div id="bar-file">
   <span class="bar-label">FILE</span>
   <button onclick="exportJSON()">💾 Export</button>
   <button onclick="importJSON()">📂 Load</button>
   <button onclick="exportPNG()">🖼 PNG</button>
+  <button onclick="showHelp()">❓ Help</button>
+  <button onclick="clearAll()" style="background:#8a2020;border-color:#5a1a1a;color:#fff;">🗑 Clear</button>
   <div class="tb-sep"></div>
-      <button onclick="showHelp()">❓ Help</button>
-    <button onclick="clearAll()" style="background:#5a1a1a;border-color:#8a2020;">🗑 Clear</button>
-    <div class="tb-sep"></div>
-    <div class="tb-group">
-      <label>Theme:</label>
-      <select id="theme-select" onchange="applyTheme(this.value)" style="min-width:110px;">
-        <option value="dark">🌙 Dark</option>
-        <option value="light">📄 Blueprint</option>
-        <option value="inverted">⬜ Inverted</option>
-        <option value="minesweeper">💣 Minesweeper</option>
-      </select>
-    </div>
+  <label>Theme:</label>
+  <select id="theme-select" onchange="applyTheme(this.value)">
+    <option value="minesweeper">💣 Minesweeper</option>
+    <option value="dark">🌙 Dark</option>
+    <option value="light">☀️ Light</option>
+  </select>
 </div>
 
-<!-- Row 2: Formatting controls -->
 <div id="bar-format">
   <span class="bar-label">SITE</span>
-  <input type="text" id="site-name" value="Site" style="width:100px;" placeholder="Name" />
-  <input type="color" id="node-color" value="#00d4ff" title="Node color" />
+  <input type="text" id="site-name" value="Site" style="width:100px;" placeholder="Name"/>
+  <input type="color" id="node-color" value="#00d4ff" title="Node color"/>
   <select id="node-shape">
     <option value="circle">Circle</option>
     <option value="square">Square</option>
@@ -137,7 +118,7 @@ canvas { display: block; touch-action: none; }
   </select>
   <div class="tb-sep"></div>
   <span class="bar-label">LINK</span>
-  <input type="color" id="link-color" value="#ffffff" title="Link color" />
+  <input type="color" id="link-color" value="#ffffff" title="Link color"/>
   <select id="link-style">
     <option value="solid">Solid</option>
     <option value="dashed">Dashed</option>
@@ -145,40 +126,33 @@ canvas { display: block; touch-action: none; }
   </select>
   <div class="tb-sep"></div>
   <span class="bar-label">BG</span>
-  <input type="color" id="bg-color" value="#1a1a2e" oninput="setBg(this.value)" />
+  <input type="color" id="bg-color" value="#bdbdbd" oninput="setBg(this.value)"/>
 </div>
 
-<!-- Main area -->
 <div id="main">
-
-  <!-- Left sidebar: placement/mode controls -->
   <div id="sidebar">
-    <div class="section-title">Place</div>
+    <div class="sec">Place</div>
     <button id="btn-add" class="active" onclick="setMode('add')">＋ Add Site</button>
     <button id="btn-connect" onclick="setMode('connect')">⟷ Connect</button>
-
-    <div class="section-title" style="margin-top:6px;">Edit</div>
+    <div class="sec" style="margin-top:6px">Edit</div>
     <button id="btn-edit" onclick="setMode('edit')">✏️ Edit</button>
     <button id="btn-move" onclick="setMode('move')">✥ Move</button>
-
+    <button id="btn-pan"  onclick="setMode('pan')">🖐 Pan</button>
     <button id="btn-delete" onclick="setMode('delete')">✕ Delete</button>
-
-    <div class="section-title" style="margin-top:6px;">Tools</div>
-    <button onclick="toggleImport()" id="btn-bulk">📋 Bulk Add</button>
+    <div class="sec" style="margin-top:6px">Tools</div>
+    <button onclick="toggleImport()">📋 Bulk Add</button>
     <button onclick="autoLayout()">⬡ Auto-Layout</button>
-
     <div id="hint-box">Tap canvas to place a site.</div>
   </div>
 
-  <!-- Canvas -->
   <div id="canvas-wrap"><canvas id="cvs"></canvas></div>
 
-  <!-- Import panel -->
   <div id="import-panel">
     <h3>📋 Bulk Add Sites</h3>
-    <p>Each <b>line</b> = one chain. Sites separated by <b>commas</b> on the same line are auto-connected left→right. Sites on their own line are placed floating.</p>
-    <p style="color:#f0c040;margin-top:2px;">Example:<br><code>HUB-1, Node-A, Node-B<br>Term-1<br>Node-C, Term-2, Term-3</code></p>
-    <textarea id="site-list-input" placeholder="HUB-1&#10;Node-A&#10;Node-B&#10;Term-1"></textarea>
+    <p>Each <b>line</b> = one chain. Sites separated by <b>commas</b> are auto-connected left→right. Sites on their own line are floating.</p>
+    <p style="color:#f0c040;margin-top:2px;">Example:<br>
+    <code style="font-size:11px;">HUB-1, Node-A, Node-B<br>Term-1<br>Node-B, Term-2, Term-3</code></p>
+    <textarea id="site-list-input" placeholder="HUB-1, Node-A, Node-B&#10;Term-1&#10;Node-C, Term-2"></textarea>
     <div class="pe-row">
       <label>Shape</label>
       <select id="import-shape">
@@ -187,7 +161,7 @@ canvas { display: block; touch-action: none; }
         <option value="diamond">Diamond</option>
         <option value="house">Hub</option>
       </select>
-      <input type="color" id="import-color" value="#00d4ff" />
+      <input type="color" id="import-color" value="#00d4ff"/>
     </div>
     <div class="btn-row">
       <button onclick="importSites()">✔ Add Sites</button>
@@ -197,12 +171,11 @@ canvas { display: block; touch-action: none; }
   </div>
 </div>
 
-
 <div id="popup-editor">
   <h4 id="pe-title">Edit</h4>
   <div id="pe-node-fields">
-    <div class="pe-row"><label>Name</label><input type="text" id="pe-name" /></div>
-    <div class="pe-row"><label>Color</label><input type="color" id="pe-color" /></div>
+    <div class="pe-row"><label>Name</label><input type="text" id="pe-name"/></div>
+    <div class="pe-row"><label>Color</label><input type="color" id="pe-color"/></div>
     <div class="pe-row"><label>Shape</label>
       <select id="pe-shape">
         <option value="circle">Circle</option>
@@ -213,8 +186,8 @@ canvas { display: block; touch-action: none; }
     </div>
   </div>
   <div id="pe-link-fields">
-    <div class="pe-row"><label>Label</label><input type="text" id="pe-label" placeholder="e.g. 1200ft / 12F" /></div>
-    <div class="pe-row"><label>Color</label><input type="color" id="pe-lcolor" /></div>
+    <div class="pe-row"><label>Label</label><input type="text" id="pe-label" placeholder="e.g. 1200ft / 12F"/></div>
+    <div class="pe-row"><label>Color</label><input type="color" id="pe-lcolor"/></div>
     <div class="pe-row"><label>Style</label>
       <select id="pe-lstyle">
         <option value="solid">Solid</option>
@@ -230,479 +203,488 @@ canvas { display: block; touch-action: none; }
 </div>
 
 <script>
+// ── State ─────────────────────────────────────────────────────────
 const cvs = document.getElementById('cvs');
 const ctx = cvs.getContext('2d');
 const wrap = document.getElementById('canvas-wrap');
 
-let nodes = [], links = [];
-let mode = 'add';
-let connectStart = null, moveSelected = null, popupTarget = null;
-let dragging = null, dragOX = 0, dragOY = 0;
-let hoverNode = null, hoverLink = null;
-let bgColor = '#1a1a2e';
-let idCounter = 1;
-function uid() { return idCounter++; }
+let nodes=[], links=[];
+let mode='add';
+let connectStart=null, popupTarget=null;
+let dragging=null, dragOX=0, dragOY=0;
+let hoverNode=null, hoverLink=null;
+let idCounter=1;
+function uid(){ return idCounter++; }
+
+// Pan/offset
+let panX=0, panY=0;
+let panning=false, panStartX=0, panStartY=0, panOriginX=0, panOriginY=0;
+const PAN_LIMIT=2000; // max pan distance from origin
 
 // ── Themes ────────────────────────────────────────────────────────
 const THEMES = {
-  dark: {
-    bg: '#1a1a2e',
-    ui: '#16213e', uiBorder: '#0f3460', uiText: '#eee',
-    btn: '#0f3460', btnBorder: '#1a4a8a', btnActive: '#e94560',
-    input: '#0f3460', inputBorder: '#1a4a8a', inputText: '#eee',
-    label: '#aaa', barLabel: '#666', hint: '#888',
-    nodeDefault: '#00d4ff', linkDefault: '#ffffff',
-    sectionTitle: '#555',
+  minesweeper:{
+    bg:'#bdbdbd', ui:'#c0c0c0', uiBorder:'#808080', uiText:'#000',
+    btn:'#c0c0c0', btnBorder:'#808080', btnActive:'#000080', btnActiveText:'#fff',
+    input:'#fff', inputBorder:'#808080', inputText:'#000',
+    label:'#000', barLabel:'#444', hint:'#222', sectionTitle:'#555',
+    nodeDefault:'#000080', linkDefault:'#000000',
   },
-  light: {
-    bg: '#ffffff',
-    ui: '#f0f0f0', uiBorder: '#cccccc', uiText: '#111111',
-    btn: '#e8e8e8', btnBorder: '#aaaaaa', btnActive: '#111111',
-    input: '#ffffff', inputBorder: '#aaaaaa', inputText: '#111111',
-    label: '#444', barLabel: '#777', hint: '#555',
-    nodeDefault: '#111111', linkDefault: '#111111',
-    sectionTitle: '#aaa',
+  dark:{
+    bg:'#1a1a2e', ui:'#16213e', uiBorder:'#0f3460', uiText:'#eee',
+    btn:'#0f3460', btnBorder:'#1a4a8a', btnActive:'#e94560', btnActiveText:'#fff',
+    input:'#0f3460', inputBorder:'#1a4a8a', inputText:'#eee',
+    label:'#aaa', barLabel:'#666', hint:'#888', sectionTitle:'#555',
+    nodeDefault:'#00d4ff', linkDefault:'#ffffff',
   },
-  minesweeper: {
-    bg: '#bdbdbd',
-    ui: '#c0c0c0', uiBorder: '#808080', uiText: '#000',
-    btn: '#c0c0c0', btnBorder: '#808080', btnActive: '#000080',
-    input: '#ffffff', inputBorder: '#808080', inputText: '#000',
-    label: '#000', barLabel: '#444', hint: '#222',
-    nodeDefault: '#000080', linkDefault: '#000000',
-    sectionTitle: '#555',
+  light:{
+    bg:'#ffffff', ui:'#f0f0f0', uiBorder:'#cccccc', uiText:'#111',
+    btn:'#e8e8e8', btnBorder:'#aaaaaa', btnActive:'#222222', btnActiveText:'#fff',
+    input:'#ffffff', inputBorder:'#aaaaaa', inputText:'#111',
+    label:'#444', barLabel:'#777', hint:'#555', sectionTitle:'#aaa',
+    nodeDefault:'#111111', linkDefault:'#111111',
   }
 };
+let currentTheme='minesweeper';
+let bgColor='#bdbdbd';
 
-let currentTheme = 'minesweeper';
-
-function applyTheme(name) {
-  currentTheme = name;
-  const t = THEMES[name];
-  const r = document.documentElement.style;
-  r.setProperty('--bg',           t.bg);
-  r.setProperty('--ui',           t.ui);
-  r.setProperty('--ui-border',    t.uiBorder);
-  r.setProperty('--ui-text',      t.uiText);
-  r.setProperty('--btn',          t.btn);
-  r.setProperty('--btn-border',   t.btnBorder);
-  r.setProperty('--btn-active',   t.btnActive);
-  r.setProperty('--input',        t.input);
-  r.setProperty('--input-border', t.inputBorder);
-  r.setProperty('--input-text',   t.inputText);
-  r.setProperty('--label',        t.label);
-  r.setProperty('--bar-label',    t.barLabel);
-  r.setProperty('--hint',         t.hint);
+function applyTheme(name){
+  currentTheme=name;
+  const t=THEMES[name];
+  bgColor=t.bg;
+  const r=document.documentElement.style;
+  r.setProperty('--bg',          t.bg);
+  r.setProperty('--ui',          t.ui);
+  r.setProperty('--ui-border',   t.uiBorder);
+  r.setProperty('--ui-text',     t.uiText);
+  r.setProperty('--btn',         t.btn);
+  r.setProperty('--btn-border',  t.btnBorder);
+  r.setProperty('--btn-active',  t.btnActive);
+  r.setProperty('--btn-active-text', t.btnActiveText);
+  r.setProperty('--input',       t.input);
+  r.setProperty('--input-border',t.inputBorder);
+  r.setProperty('--input-text',  t.inputText);
+  r.setProperty('--label',       t.label);
+  r.setProperty('--bar-label',   t.barLabel);
+  r.setProperty('--hint',        t.hint);
   r.setProperty('--section-title',t.sectionTitle);
 
-  bgColor = t.bg;
-  document.getElementById('bg-color').value = bgColor;
+  document.getElementById('bg-color').value=bgColor;
+  document.getElementById('theme-select').value=name;
 
-  const isMine  = name === 'minesweeper';
-  const isLight = name === 'light';
+  const isMine=name==='minesweeper';
+  const isLight=name==='light';
+  document.body.style.fontFamily=isMine?'"Courier New",monospace':'Arial,sans-serif';
 
-  document.querySelectorAll('button').forEach(b => {
-    if (isMine) {
-      b.style.boxShadow     = 'inset -2px -2px #000, inset 2px 2px #fff, inset -4px -4px #808080, inset 4px 4px #dfdfdf';
-      b.style.borderRadius  = '0';
-      b.style.fontFamily    = '"Courier New", monospace';
-      b.style.fontWeight    = 'bold';
-      b.style.letterSpacing = '0.5px';
+  document.querySelectorAll('button').forEach(b=>{
+    if(isMine){
+      b.style.boxShadow='inset -2px -2px #000,inset 2px 2px #fff,inset -4px -4px #808080,inset 4px 4px #dfdfdf';
+      b.style.borderRadius='0'; b.style.fontFamily='"Courier New",monospace';
+      b.style.fontWeight='bold'; b.style.letterSpacing='.5px';
     } else {
-      b.style.boxShadow     = '';
-      b.style.borderRadius  = isLight ? '2px' : '';
-      b.style.fontFamily    = '';
-      b.style.fontWeight    = '';
-      b.style.letterSpacing = '';
+      b.style.boxShadow=''; b.style.borderRadius=isLight?'2px':'4px';
+      b.style.fontFamily=''; b.style.fontWeight=''; b.style.letterSpacing='';
     }
   });
-
-  document.querySelectorAll('input[type=text], select, textarea').forEach(el => {
-    if (isMine) {
-      el.style.boxShadow    = 'inset 2px 2px #808080, inset -2px -2px #dfdfdf';
-      el.style.borderRadius = '0';
-      el.style.fontFamily   = '"Courier New", monospace';
+  document.querySelectorAll('input[type=text],select,textarea').forEach(el=>{
+    if(isMine){
+      el.style.boxShadow='inset 2px 2px #808080,inset -2px -2px #dfdfdf';
+      el.style.borderRadius='0'; el.style.fontFamily='"Courier New",monospace';
     } else {
-      el.style.boxShadow    = '';
-      el.style.borderRadius = isLight ? '2px' : '';
-      el.style.fontFamily   = '';
+      el.style.boxShadow=''; el.style.borderRadius=isLight?'2px':'4px'; el.style.fontFamily='';
     }
   });
-
-  document.body.style.fontFamily = isMine ? '"Courier New", monospace' : 'Arial, sans-serif';
+  // Re-apply active state styling
+  ['add','connect','edit','move','pan','delete'].forEach(m=>{
+    const b=document.getElementById('btn-'+m);
+    if(b) b.classList.toggle('active', m===mode);
+  });
   draw();
 }
+
+function setBg(v){ bgColor=v; draw(); }
 
 // ── Resize ────────────────────────────────────────────────────────
-function resize() { cvs.width = wrap.clientWidth; cvs.height = wrap.clientHeight; draw(); }
-window.addEventListener('resize', resize);
-applyTheme('minesweeper');
-resize();
+function resize(){
+  cvs.width=wrap.clientWidth;
+  cvs.height=wrap.clientHeight;
+  draw();
+}
+window.addEventListener('resize',resize);
 
 // ── Mode ──────────────────────────────────────────────────────────
-function setMode(m) {
-  mode = m; connectStart = null; moveSelected = null; dragging = null; closePopup();
-  ['add','connect','edit','move','delete'].forEach(x =>
-    document.getElementById('btn-'+x).classList.toggle('active', x === m));
-  const hints = {
-    add:     'Tap canvas to place a site.',
-    connect: 'Tap a site to start, tap another to connect.',
-    edit:    'Tap any site or link to edit it.',
-    move:    'Drag any site to reposition it.',
-    delete:  'Tap a site or link to delete it.'
+function setMode(m){
+  mode=m; connectStart=null; dragging=null; closePopup();
+  ['add','connect','edit','move','pan','delete'].forEach(x=>{
+    const b=document.getElementById('btn-'+x);
+    if(b) b.classList.toggle('active',x===m);
+  });
+  const hints={
+    add:'Tap canvas to place a site.',
+    connect:'Tap a site to start, tap another to connect.',
+    edit:'Tap any site or link to edit it.',
+    move:'Drag any site to reposition it.',
+    pan:'Drag the canvas to pan. Double-tap to reset view.',
+    delete:'Tap a site or link to delete it.'
   };
-  document.getElementById('hint-box').textContent = hints[m];
-  cvs.style.cursor = m==='move' ? 'grab' : 'default';
+  document.getElementById('hint-box').textContent=hints[m];
+  wrap.style.cursor=m==='pan'?'grab':m==='move'?'grab':'crosshair';
   draw();
 }
 
-// ── Helpers ───────────────────────────────────────────────────────
-function nodeAt(x, y) {
-  for (let i = nodes.length-1; i >= 0; i--)
-    if (Math.hypot(nodes[i].x-x, nodes[i].y-y) < 22) return nodes[i];
+// ── Coordinate helpers ────────────────────────────────────────────
+// Canvas coords → world coords
+function toWorld(cx,cy){ return {x:cx-panX, y:cy-panY}; }
+function evPos(e){ const r=cvs.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+
+function nodeAt(wx,wy){
+  for(let i=nodes.length-1;i>=0;i--)
+    if(Math.hypot(nodes[i].x-wx,nodes[i].y-wy)<22) return nodes[i];
   return null;
 }
-
-function linkNear(x, y) {
-  for (const l of links) {
-    const a = nodes.find(n => n.id===l.a), b = nodes.find(n => n.id===l.b);
-    if (!a||!b) continue;
+function linkNear(wx,wy){
+  for(const l of links){
+    const a=nodes.find(n=>n.id===l.a), b=nodes.find(n=>n.id===l.b);
+    if(!a||!b) continue;
     const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy;
-    if (len2<1) continue;
-    const t = Math.max(0, Math.min(1, ((x-a.x)*dx+(y-a.y)*dy)/len2));
-    if (Math.hypot(a.x+t*dx-x, a.y+t*dy-y) < 10) return l;
+    if(len2<1) continue;
+    const t=Math.max(0,Math.min(1,((wx-a.x)*dx+(wy-a.y)*dy)/len2));
+    if(Math.hypot(a.x+t*dx-wx,a.y+t*dy-wy)<10) return l;
   }
   return null;
 }
 
-function evPos(e) {
-  const r = cvs.getBoundingClientRect();
-  return { x: e.clientX-r.left, y: e.clientY-r.top };
+// ── Pan helpers ───────────────────────────────────────────────────
+function clampPan(){
+  panX=Math.max(-PAN_LIMIT,Math.min(PAN_LIMIT,panX));
+  panY=Math.max(-PAN_LIMIT,Math.min(PAN_LIMIT,panY));
 }
+function resetPan(){ panX=0; panY=0; draw(); }
 
-// ── Unified tap handler ───────────────────────────────────────────
-function handleTap(x, y, clientX, clientY) {
-  if (mode === 'edit') {
-    const n = nodeAt(x, y);
-    if (n) { openPopup('node', n, clientX, clientY); return; }
-    const l = linkNear(x, y);
-    if (l) { openPopup('link', l, clientX, clientY); }
+// ── Tap handler ───────────────────────────────────────────────────
+function handleTap(cx,cy,clientX,clientY){
+  const {x,y}=toWorld(cx,cy);
+  if(mode==='edit'){
+    const n=nodeAt(x,y); if(n){openPopup('node',n,clientX,clientY);return;}
+    const l=linkNear(x,y); if(l) openPopup('link',l,clientX,clientY);
     return;
   }
-  if (mode === 'add') {
-    nodes.push({ id: uid(), x, y,
-      name:  document.getElementById('site-name').value.trim() || 'Site',
-      color: document.getElementById('node-color').value,
-      shape: document.getElementById('node-shape').value });
+  if(mode==='add'){
+    nodes.push({id:uid(),x,y,
+      name:document.getElementById('site-name').value.trim()||'Site',
+      color:document.getElementById('node-color').value,
+      shape:document.getElementById('node-shape').value});
     draw(); return;
   }
-  if (mode === 'connect') {
-    const n = nodeAt(x, y);
-    if (!n) return;
-    if (!connectStart) { connectStart = n; draw(); return; }
-    if (connectStart.id === n.id) { connectStart = null; draw(); return; }
-    const exists = links.find(l =>
-      (l.a===connectStart.id&&l.b===n.id)||(l.a===n.id&&l.b===connectStart.id));
-    if (!exists) {
-      const nl = { id: uid(), a: connectStart.id, b: n.id, label: '',
-        color: document.getElementById('link-color').value,
-        style: document.getElementById('link-style').value };
-      links.push(nl);
-      connectStart = null; draw();
-      openPopup('link', nl, clientX, clientY);
-    } else { connectStart = null; draw(); }
+  if(mode==='connect'){
+    const n=nodeAt(x,y); if(!n) return;
+    if(!connectStart){connectStart=n;draw();return;}
+    if(connectStart.id===n.id){connectStart=null;draw();return;}
+    const exists=links.find(l=>(l.a===connectStart.id&&l.b===n.id)||(l.a===n.id&&l.b===connectStart.id));
+    if(!exists){
+      const nl={id:uid(),a:connectStart.id,b:n.id,label:'',
+        color:document.getElementById('link-color').value,
+        style:document.getElementById('link-style').value};
+      links.push(nl); connectStart=null; draw();
+      openPopup('link',nl,clientX,clientY);
+    } else {connectStart=null;draw();}
     return;
   }
-  if (mode === 'move') {
-    const n = nodeAt(x, y);
-    if (n) {
-      if (!moveSelected || moveSelected.id !== n.id) { moveSelected = n; draw(); return; }
-      moveSelected = null; draw(); return;
-    }
-    if (moveSelected) { moveSelected.x = x; moveSelected.y = y; moveSelected = null; draw(); }
-    return;
-  }
-  if (mode === 'delete') {
-    const n = nodeAt(x, y);
-    if (n) { nodes = nodes.filter(nd=>nd.id!==n.id); links = links.filter(l=>l.a!==n.id&&l.b!==n.id); draw(); return; }
-    const l = linkNear(x, y);
-    if (l) { links = links.filter(lk=>lk.id!==l.id); draw(); }
+  if(mode==='delete'){
+    const n=nodeAt(x,y);
+    if(n){nodes=nodes.filter(nd=>nd.id!==n.id);links=links.filter(l=>l.a!==n.id&&l.b!==n.id);draw();return;}
+    const l=linkNear(x,y);
+    if(l){links=links.filter(lk=>lk.id!==l.id);draw();}
   }
 }
 
-// ── Mouse ─────────────────────────────────────────────────────────
-cvs.addEventListener('mousedown', e => {
-  if (e.button !== 0) return;
-  const {x,y} = evPos(e);
-  if (mode === 'move') {
-    const n = nodeAt(x, y);
-    if (n) { dragging = n; dragOX = x-n.x; dragOY = y-n.y; cvs.style.cursor='grabbing'; }
+// ── Mouse events ──────────────────────────────────────────────────
+cvs.addEventListener('mousedown',e=>{
+  if(e.button!==0) return;
+  const {x,y}=evPos(e);
+  if(mode==='pan'){
+    panning=true; panStartX=x; panStartY=y; panOriginX=panX; panOriginY=panY;
+    wrap.style.cursor='grabbing'; return;
+  }
+  if(mode==='move'){
+    const {x:wx,y:wy}=toWorld(x,y);
+    const n=nodeAt(wx,wy);
+    if(n){dragging=n;dragOX=wx-n.x;dragOY=wy-n.y;wrap.style.cursor='grabbing';}
     return;
   }
-  handleTap(x, y, e.clientX, e.clientY);
-});
-cvs.addEventListener('mousemove', e => {
-  const {x,y} = evPos(e);
-  if (dragging) { dragging.x = x-dragOX; dragging.y = y-dragOY; draw(); return; }
-  const pN=hoverNode, pL=hoverLink;
-  hoverNode = nodeAt(x,y);
-  hoverLink = hoverNode ? null : linkNear(x,y);
-  if (hoverNode!==pN||hoverLink!==pL) draw();
-});
-cvs.addEventListener('mouseup', () => {
-  dragging = null;
-  cvs.style.cursor = mode==='move' ? 'grab' : 'default';
+  handleTap(x,y,e.clientX,e.clientY);
 });
 
-// ── Touch ─────────────────────────────────────────────────────────
-let lastTap = 0;
-cvs.addEventListener('touchstart', e => {
+cvs.addEventListener('mousemove',e=>{
+  const {x,y}=evPos(e);
+  if(panning){
+    panX=panOriginX+(x-panStartX);
+    panY=panOriginY+(y-panStartY);
+    clampPan(); draw(); return;
+  }
+  if(dragging&&mode==='move'){
+    const {x:wx,y:wy}=toWorld(x,y);
+    dragging.x=wx-dragOX; dragging.y=wy-dragOY; draw(); return;
+  }
+  const {x:wx,y:wy}=toWorld(x,y);
+  const pH=hoverNode, pL=hoverLink;
+  hoverNode=nodeAt(wx,wy); hoverLink=hoverNode?null:linkNear(wx,wy);
+  if(hoverNode!==pH||hoverLink!==pL) draw();
+});
+
+cvs.addEventListener('mouseup',()=>{
+  panning=false; dragging=null;
+  wrap.style.cursor=mode==='pan'||mode==='move'?'grab':'crosshair';
+});
+
+cvs.addEventListener('dblclick',e=>{
+  if(mode==='pan'){resetPan();return;}
+});
+
+// ── Touch events ──────────────────────────────────────────────────
+let lastTap=0, touchDragging=false, touchPanStart=null;
+
+cvs.addEventListener('touchstart',e=>{
   e.preventDefault();
-  const t = e.changedTouches[0];
-  const r = cvs.getBoundingClientRect();
-  const x = t.clientX-r.left, y = t.clientY-r.top;
-  if (mode === 'move') {
-    const n = nodeAt(x, y);
-    if (n) { dragging = n; dragOX = x-n.x; dragOY = y-n.y; }
+  const t=e.changedTouches[0];
+  const r=cvs.getBoundingClientRect();
+  const cx=t.clientX-r.left, cy=t.clientY-r.top;
+  const now=Date.now();
+
+  if(mode==='pan'){
+    panning=true; touchPanStart={cx,cy,px:panX,py:panY};
+    if(now-lastTap<300){resetPan();panning=false;}
+    lastTap=now; return;
+  }
+  if(mode==='move'){
+    const {x,y}=toWorld(cx,cy);
+    const n=nodeAt(x,y);
+    if(n){dragging=n;dragOX=x-n.x;dragOY=y-n.y;touchDragging=true;}
     return;
   }
-  const now = Date.now();
-  if (now - lastTap < 300) { lastTap = 0; return; }
-  lastTap = now;
-  handleTap(x, y, t.clientX, t.clientY);
-}, { passive: false });
+  if(now-lastTap<300){lastTap=0;return;} // ignore double-tap in other modes
+  lastTap=now;
+  handleTap(cx,cy,t.clientX,t.clientY);
+},{passive:false});
 
-cvs.addEventListener('touchmove', e => {
+cvs.addEventListener('touchmove',e=>{
   e.preventDefault();
-  if (!dragging) return;
-  const t = e.changedTouches[0];
-  const r = cvs.getBoundingClientRect();
-  dragging.x = t.clientX-r.left-dragOX;
-  dragging.y = t.clientY-r.top-dragOY;
-  draw();
-}, { passive: false });
+  const t=e.changedTouches[0];
+  const r=cvs.getBoundingClientRect();
+  const cx=t.clientX-r.left, cy=t.clientY-r.top;
+  if(panning&&touchPanStart){
+    panX=touchPanStart.px+(cx-touchPanStart.cx);
+    panY=touchPanStart.py+(cy-touchPanStart.cy);
+    clampPan(); draw(); return;
+  }
+  if(dragging&&touchDragging){
+    const {x,y}=toWorld(cx,cy);
+    dragging.x=x-dragOX; dragging.y=y-dragOY; draw();
+  }
+},{passive:false});
 
-cvs.addEventListener('touchend', e => {
+cvs.addEventListener('touchend',e=>{
   e.preventDefault();
-  dragging = null;
-}, { passive: false });
+  panning=false; dragging=null; touchDragging=false; touchPanStart=null;
+},{passive:false});
 
-// ── Popup ─────────────────────────────────────────────────────────
-function openPopup(type, obj, cx, cy) {
-  popupTarget = { type, obj };
-  document.getElementById('pe-title').textContent = type==='node' ? '✏️ Edit Site' : '✏️ Edit Link';
-  document.getElementById('pe-node-fields').style.display = type==='node' ? '' : 'none';
-  document.getElementById('pe-link-fields').style.display = type==='link' ? '' : 'none';
-  if (type==='node') {
-    document.getElementById('pe-name').value  = obj.name;
-    document.getElementById('pe-color').value = obj.color;
-    document.getElementById('pe-shape').value = obj.shape;
+// ── Popup editor ──────────────────────────────────────────────────
+function openPopup(type,obj,cx,cy){
+  popupTarget={type,obj};
+  document.getElementById('pe-title').textContent=type==='node'?'✏️ Edit Site':'✏️ Edit Link';
+  document.getElementById('pe-node-fields').style.display=type==='node'?'':'none';
+  document.getElementById('pe-link-fields').style.display=type==='link'?'':'none';
+  if(type==='node'){
+    document.getElementById('pe-name').value=obj.name;
+    document.getElementById('pe-color').value=obj.color;
+    document.getElementById('pe-shape').value=obj.shape;
   } else {
-    document.getElementById('pe-label').value  = obj.label||'';
-    document.getElementById('pe-lcolor').value = obj.color||'#ffffff';
-    document.getElementById('pe-lstyle').value = obj.style||'solid';
+    document.getElementById('pe-label').value=obj.label||'';
+    document.getElementById('pe-lcolor').value=obj.color||'#ffffff';
+    document.getElementById('pe-lstyle').value=obj.style||'solid';
   }
-  const pe = document.getElementById('popup-editor');
-  pe.style.display = 'block';
-  const pw=250, ph=210;
-  pe.style.left = Math.min(cx+8, window.innerWidth-pw-8)+'px';
-  pe.style.top  = Math.max(8, Math.min(cy, window.innerHeight-ph-8))+'px';
-  setTimeout(()=>{ const f=document.getElementById(type==='node'?'pe-name':'pe-label'); f.focus(); f.select(); }, 50);
+  const pe=document.getElementById('popup-editor');
+  pe.style.display='block';
+  const pw=250,ph=210;
+  pe.style.left=Math.min(cx+8,window.innerWidth-pw-8)+'px';
+  pe.style.top=Math.max(8,Math.min(cy,window.innerHeight-ph-8))+'px';
+  setTimeout(()=>{const f=document.getElementById(type==='node'?'pe-name':'pe-label');f.focus();f.select();},50);
 }
-
-function savePopup() {
-  if (!popupTarget) return;
-  const {type, obj} = popupTarget;
-  if (type==='node') {
-    const nm = document.getElementById('pe-name').value.trim();
-    if (nm) obj.name = nm;
-    obj.color = document.getElementById('pe-color').value;
-    obj.shape = document.getElementById('pe-shape').value;
+function savePopup(){
+  if(!popupTarget) return;
+  const{type,obj}=popupTarget;
+  if(type==='node'){
+    const nm=document.getElementById('pe-name').value.trim();
+    if(nm) obj.name=nm;
+    obj.color=document.getElementById('pe-color').value;
+    obj.shape=document.getElementById('pe-shape').value;
   } else {
-    obj.label = document.getElementById('pe-label').value.trim();
-    obj.color = document.getElementById('pe-lcolor').value;
-    obj.style = document.getElementById('pe-lstyle').value;
+    obj.label=document.getElementById('pe-label').value.trim();
+    obj.color=document.getElementById('pe-lcolor').value;
+    obj.style=document.getElementById('pe-lstyle').value;
   }
   closePopup(); draw();
 }
-
-function closePopup() {
-  popupTarget = null;
-  document.getElementById('popup-editor').style.display = 'none';
+function closePopup(){
+  popupTarget=null;
+  document.getElementById('popup-editor').style.display='none';
 }
-
-document.getElementById('popup-editor').addEventListener('keydown', e => {
-  if (e.key==='Enter') savePopup();
-  if (e.key==='Escape') closePopup();
+document.getElementById('popup-editor').addEventListener('keydown',e=>{
+  if(e.key==='Enter') savePopup();
+  if(e.key==='Escape') closePopup();
 });
 
 // ── Draw ──────────────────────────────────────────────────────────
-function blendGrid(hex) {
-  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
-  const bright=(r*299+g*587+b*114)/1000, amt=bright<128?28:-28;
-  return `rgb(${Math.min(255,Math.max(0,r+amt))},${Math.min(255,Math.max(0,g+amt))},${Math.min(255,Math.max(0,b+amt))})`;
+function blendGrid(hex){
+  const rv=parseInt(hex.slice(1,3),16),gv=parseInt(hex.slice(3,5),16),bv=parseInt(hex.slice(5,7),16);
+  const bright=(rv*299+gv*587+bv*114)/1000,amt=bright<128?28:-28;
+  return `rgb(${Math.min(255,Math.max(0,rv+amt))},${Math.min(255,Math.max(0,gv+amt))},${Math.min(255,Math.max(0,bv+amt))})`;
 }
 
-function drawScene(tc, transparent) {
-  const t = THEMES[currentTheme];
-  const W = cvs.width, H = cvs.height;
+function drawScene(tc,W,H,transparent,offPanX,offPanY){
+  const isMine=currentTheme==='minesweeper';
+  const isLight=currentTheme==='light';
+  const ox=offPanX||0, oy=offPanY||0;
 
-  if (!transparent) {
-    tc.fillStyle = bgColor; tc.fillRect(0,0,W,H);
-    // Grid
-    tc.strokeStyle = blendGrid(bgColor); tc.lineWidth=1;
-    // Minesweeper: no grid, just flat
-    if (currentTheme !== 'minesweeper') {
-      for (let x=0;x<W;x+=40){tc.beginPath();tc.moveTo(x,0);tc.lineTo(x,H);tc.stroke();}
-      for (let y=0;y<H;y+=40){tc.beginPath();tc.moveTo(0,y);tc.lineTo(W,y);tc.stroke();}
-    }
-    // Blueprint: dot grid instead of lines
-    if (currentTheme === 'light') {
-      tc.fillStyle = 'rgba(100,80,50,0.25)';
-      for (let x=0;x<W;x+=40) for (let y=0;y<H;y+=40) { tc.beginPath();tc.arc(x,y,1.2,0,Math.PI*2);tc.fill(); }
+  if(!transparent){
+    tc.fillStyle=bgColor; tc.fillRect(0,0,W,H);
+    if(isMine){
+      const sz=32;
+      for(let x=-((ox%sz)+sz)%sz;x<W;x+=sz)
+        for(let y=-((oy%sz)+sz)%sz;y<H;y+=sz){
+          tc.fillStyle=((Math.floor((x-ox)/sz)+Math.floor((y-oy)/sz))%2===0)?'#c0c0c0':'#b8b8b8';
+          tc.fillRect(x,y,sz,sz);
+          tc.strokeStyle='rgba(255,255,255,0.4)'; tc.lineWidth=1;
+          tc.beginPath();tc.moveTo(x,y+sz);tc.lineTo(x,y);tc.lineTo(x+sz,y);tc.stroke();
+          tc.strokeStyle='rgba(0,0,0,0.15)';
+          tc.beginPath();tc.moveTo(x+sz,y);tc.lineTo(x+sz,y+sz);tc.lineTo(x,y+sz);tc.stroke();
+        }
+    } else {
+      tc.strokeStyle=isLight?'rgba(0,0,0,0.07)':blendGrid(bgColor); tc.lineWidth=1;
+      const gx=((ox%40)+40)%40, gy=((oy%40)+40)%40;
+      for(let x=gx-40;x<W;x+=40){tc.beginPath();tc.moveTo(x,0);tc.lineTo(x,H);tc.stroke();}
+      for(let y=gy-40;y<H;y+=40){tc.beginPath();tc.moveTo(0,y);tc.lineTo(W,y);tc.stroke();}
     }
   }
 
-  links.forEach(l => {
-    const a=nodes.find(n=>n.id===l.a), b=nodes.find(n=>n.id===l.b);
-    if (!a||!b) return;
-    const hot = !transparent && hoverLink && hoverLink.id===l.id;
+  tc.save(); tc.translate(ox,oy);
+
+  links.forEach(l=>{
+    const a=nodes.find(n=>n.id===l.a),b=nodes.find(n=>n.id===l.b);
+    if(!a||!b) return;
+    const hot=!transparent&&hoverLink&&hoverLink.id===l.id;
+    const hotColor=isLight||isMine?'#cc0000':'#ffff00';
     tc.beginPath();
-    tc.strokeStyle = hot ? (currentTheme==='light'||currentTheme==='inverted'||currentTheme==='minesweeper' ? '#cc0000' : '#ffff00') : (l.color||t.linkDefault);
-    tc.lineWidth = hot?3:2;
-    if (l.style==='dashed') tc.setLineDash([10,5]);
-    else if (l.style==='dotted') tc.setLineDash([3,5]);
+    tc.strokeStyle=hot?hotColor:(l.color||'#fff');
+    tc.lineWidth=hot?3:2;
+    if(l.style==='dashed') tc.setLineDash([10,5]);
+    else if(l.style==='dotted') tc.setLineDash([3,5]);
     else tc.setLineDash([]);
-    tc.moveTo(a.x,a.y); tc.lineTo(b.x,b.y); tc.stroke(); tc.setLineDash([]);
-    if (l.label) {
-      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+    tc.moveTo(a.x,a.y);tc.lineTo(b.x,b.y);tc.stroke();tc.setLineDash([]);
+    if(l.label){
+      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
       let ang=Math.atan2(b.y-a.y,b.x-a.x);
-      if (Math.abs(ang)>Math.PI/2) ang+=Math.PI;
-      tc.save(); tc.translate(mx,my); tc.rotate(ang);
-      tc.font = currentTheme==='minesweeper' ? 'bold 11px "Courier New"' : 'bold 11px Arial';
-      tc.textAlign='center'; tc.textBaseline='alphabetic';
+      if(Math.abs(ang)>Math.PI/2) ang+=Math.PI;
+      tc.save();tc.translate(mx,my);tc.rotate(ang);
+      tc.font=isMine?'bold 11px "Courier New"':'bold 11px Arial';
+      tc.textAlign='center';tc.textBaseline='alphabetic';
       const tw=tc.measureText(l.label).width;
-      const lblBg = currentTheme==='light' ? 'rgba(245,240,232,0.9)'
-                  : currentTheme==='inverted' ? 'rgba(229,229,209,0.9)'
-                  : currentTheme==='minesweeper' ? 'rgba(192,192,192,0.95)'
-                  : 'rgba(10,10,30,0.82)';
-      const lblFg = currentTheme==='light' ? '#3a2800'
-                  : currentTheme==='inverted' ? '#1b2a00'
-                  : currentTheme==='minesweeper' ? '#000080'
-                  : (hot?'#ffff00':'#f0c040');
-      tc.fillStyle=lblBg; tc.fillRect(-tw/2-3,-13,tw+6,15);
-      tc.fillStyle=lblFg; tc.fillText(l.label,0,0);
-      tc.restore();
+      tc.fillStyle=isLight?'rgba(255,255,255,0.92)':isMine?'rgba(192,192,192,0.95)':'rgba(10,10,30,0.85)';
+      tc.fillRect(-tw/2-3,-13,tw+6,15);
+      tc.fillStyle=isLight?'#000':isMine?'#000080':(hot?'#ffff00':'#f0c040');
+      tc.fillText(l.label,0,0);tc.restore();
     }
   });
 
-  if (!transparent && connectStart) {
-    tc.beginPath(); tc.arc(connectStart.x,connectStart.y,24,0,Math.PI*2);
-    tc.strokeStyle=t.btnActive; tc.lineWidth=2; tc.setLineDash([4,3]); tc.stroke(); tc.setLineDash([]);
+  if(!transparent&&connectStart){
+    tc.beginPath();tc.arc(connectStart.x,connectStart.y,24,0,Math.PI*2);
+    tc.strokeStyle=isLight||isMine?'#cc0000':THEMES[currentTheme].btnActive;
+    tc.lineWidth=2;tc.setLineDash([4,3]);tc.stroke();tc.setLineDash([]);
   }
 
-  nodes.forEach(n => {
-    const hot = !transparent && hoverNode && hoverNode.id===n.id;
-    const sel = !transparent && moveSelected && moveSelected.id===n.id;
-    const r=13;
-    tc.save(); tc.translate(n.x,n.y);
+  nodes.forEach(n=>{
+    const hot=!transparent&&hoverNode&&hoverNode.id===n.id;
+    const r2=13;
+    tc.save();tc.translate(n.x,n.y);
     tc.beginPath();
-    if (n.shape==='circle') tc.arc(0,0,r,0,Math.PI*2);
-    else if (n.shape==='square') tc.rect(-r,-r,r*2,r*2);
-    else if (n.shape==='diamond'){tc.moveTo(0,-r*1.4);tc.lineTo(r*1.1,0);tc.lineTo(0,r*1.4);tc.lineTo(-r*1.1,0);tc.closePath();}
-    else if (n.shape==='house'){tc.moveTo(-r,r);tc.lineTo(-r,-2);tc.lineTo(0,-r-5);tc.lineTo(r,-2);tc.lineTo(r,r);tc.closePath();}
-
-    // Minesweeper: raised button effect on nodes
-    if (currentTheme === 'minesweeper') {
-      tc.fillStyle = sel ? '#ffff00' : n.color;
-      tc.fill();
-      tc.strokeStyle = '#fff'; tc.lineWidth = 2; tc.stroke();
+    if(n.shape==='circle') tc.arc(0,0,r2,0,Math.PI*2);
+    else if(n.shape==='square') tc.rect(-r2,-r2,r2*2,r2*2);
+    else if(n.shape==='diamond'){tc.moveTo(0,-r2*1.4);tc.lineTo(r2*1.1,0);tc.lineTo(0,r2*1.4);tc.lineTo(-r2*1.1,0);tc.closePath();}
+    else if(n.shape==='house'){tc.moveTo(-r2,r2);tc.lineTo(-r2,-2);tc.lineTo(0,-r2-5);tc.lineTo(r2,-2);tc.lineTo(r2,r2);tc.closePath();}
+    if(isMine){
+      tc.fillStyle=n.color;tc.fill();
+      tc.strokeStyle='#fff';tc.lineWidth=2.5;tc.stroke();
       tc.beginPath();
-      if (n.shape==='circle') tc.arc(0,0,r,0,Math.PI*2);
-      tc.strokeStyle = '#808080'; tc.lineWidth=1; tc.stroke();
+      if(n.shape==='circle') tc.arc(0,0,r2,0,Math.PI*2);
+      tc.strokeStyle='#808080';tc.lineWidth=1;tc.stroke();
+      tc.beginPath();tc.arc(0,0,3,0,Math.PI*2);
+      tc.fillStyle='rgba(0,0,0,0.3)';tc.fill();
     } else {
-      if (hot||sel){tc.shadowColor=sel?'#ffff00':n.color; tc.shadowBlur=sel?22:16;}
-      tc.fillStyle=sel?'#ffff00':n.color; tc.fill();
-      tc.strokeStyle=(hot||sel)?'#fff':(currentTheme==='light'||currentTheme==='inverted'?'rgba(0,0,0,0.4)':'rgba(0,0,0,0.5)');
-      tc.lineWidth=(hot||sel)?2:1.5; tc.stroke();
-      tc.shadowBlur=0;
+      if(!transparent&&hot){tc.shadowColor=n.color;tc.shadowBlur=16;}
+      tc.fillStyle=n.color;tc.fill();
+      tc.strokeStyle=hot?(isLight?'#cc0000':'#fff'):(isLight?'rgba(0,0,0,0.5)':'rgba(0,0,0,0.5)');
+      tc.lineWidth=hot?2:1.5;tc.stroke();tc.shadowBlur=0;
     }
-
-    const labelFont = currentTheme==='minesweeper' ? 'bold 10px "Courier New"' : 'bold 11px Arial';
-    tc.font=labelFont; tc.textAlign='center'; tc.textBaseline='top';
+    tc.font=isMine?'bold 10px "Courier New"':'bold 11px Arial';
+    tc.textAlign='center';tc.textBaseline='top';
     const tw=tc.measureText(n.name).width;
-    const lbg = currentTheme==='light' ? 'rgba(245,240,232,0.85)'
-              : currentTheme==='inverted' ? 'rgba(229,229,209,0.85)'
-              : currentTheme==='minesweeper' ? 'rgba(192,192,192,0.9)'
-              : 'rgba(0,0,0,0.72)';
-    const lfg = (currentTheme==='light'||currentTheme==='inverted') ? '#111'
-              : currentTheme==='minesweeper' ? '#000080' : '#fff';
-    tc.fillStyle=lbg; tc.fillRect(-tw/2-3,r+3,tw+6,14);
-    tc.fillStyle=lfg; tc.fillText(n.name,0,r+4);
+    tc.fillStyle=isLight?'rgba(255,255,255,0.88)':isMine?'rgba(192,192,192,0.92)':'rgba(0,0,0,0.72)';
+    tc.fillRect(-tw/2-3,r2+3,tw+6,14);
+    tc.fillStyle=isLight?'#000':isMine?'#000080':'#fff';
+    tc.fillText(n.name,0,r2+4);
     tc.restore();
   });
+
+  tc.restore();
 }
 
-function draw() { ctx.clearRect(0,0,cvs.width,cvs.height); drawScene(ctx, false); }
-
-// ── BG ────────────────────────────────────────────────────────────
-function setBg(v) { bgColor=v; draw(); }
+function draw(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  drawScene(ctx,cvs.width,cvs.height,false,panX,panY);
+}
 
 // ── Import sites ──────────────────────────────────────────────────
-function toggleImport() {
+function toggleImport(){
   document.getElementById('import-panel').classList.toggle('open');
 }
-
-function importSites() {
-  const raw   = document.getElementById('site-list-input').value;
-  const shape = document.getElementById('import-shape').value;
-  const color = document.getElementById('import-color').value;
-  const lcolor = document.getElementById('link-color').value;
-  const lstyle = document.getElementById('link-style').value;
-
-  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
-  if (!lines.length) return;
-
-  // Collect all new nodes per line so we can layout them after
-  const chains = lines.map(line =>
-    line.split(',').map(s=>s.trim()).filter(Boolean)
-  );
-
-  // Count total nodes for grid positioning
-  const totalNodes = chains.reduce((s,c)=>s+c.length, 0);
-  const cols = Math.ceil(Math.sqrt(totalNodes));
-  const colW = 130, rowH = 90;
-  const startX = cvs.width/2 - ((cols-1)*colW)/2;
-  const startY = cvs.height/2 - (Math.ceil(totalNodes/cols)-1)*rowH/2;
-
-  let idx = 0;
-  chains.forEach(chain => {
-    const newNodes = chain.map(name => {
-      // Reuse existing node with same name if present
-      const existing = nodes.find(n => n.name === name);
-      if (existing) return existing;
-      const col = idx % cols, row = Math.floor(idx/cols);
-      const node = { id:uid(), x:startX+col*colW, y:startY+row*rowH, name, color, shape };
-      nodes.push(node);
-      idx++;
-      return node;
+function importSites(){
+  const raw=document.getElementById('site-list-input').value;
+  const shape=document.getElementById('import-shape').value;
+  const color=document.getElementById('import-color').value;
+  const lcolor=document.getElementById('link-color').value;
+  const lstyle=document.getElementById('link-style').value;
+  const lines=raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  if(!lines.length) return;
+  const chains=lines.map(line=>line.split(',').map(s=>s.trim()).filter(Boolean));
+  const total=chains.reduce((s,c)=>s+c.length,0);
+  const cols=Math.ceil(Math.sqrt(total)),colW=130,rowH=90;
+  // Place relative to current view center
+  const cx=cvs.width/2-panX, cy=cvs.height/2-panY;
+  const startX=cx-((cols-1)*colW)/2;
+  const startY=cy-(Math.ceil(total/cols)-1)*rowH/2;
+  let idx=0;
+  chains.forEach(chain=>{
+    const cNodes=chain.map(name=>{
+      const ex=nodes.find(n=>n.name===name);
+      if(ex) return ex;
+      const col=idx%cols,row=Math.floor(idx/cols);
+      const node={id:uid(),x:startX+col*colW,y:startY+row*rowH,name,color,shape};
+      nodes.push(node);idx++;return node;
     });
-    // Connect chain links
-    for (let i=0; i<newNodes.length-1; i++) {
-      const a=newNodes[i], b=newNodes[i+1];
-      const exists = links.find(l=>(l.a===a.id&&l.b===b.id)||(l.a===b.id&&l.b===a.id));
-      if (!exists) links.push({ id:uid(), a:a.id, b:b.id, label:'', color:lcolor, style:lstyle });
+    for(let i=0;i<cNodes.length-1;i++){
+      const a=cNodes[i],b=cNodes[i+1];
+      if(!links.find(l=>(l.a===a.id&&l.b===b.id)||(l.a===b.id&&l.b===a.id)))
+        links.push({id:uid(),a:a.id,b:b.id,label:'',color:lcolor,style:lstyle});
     }
   });
-
-  document.getElementById('site-list-input').value = '';
-  toggleImport(); draw();
+  document.getElementById('site-list-input').value='';
+  toggleImport();draw();
 }
 
 // ── Auto-Layout ───────────────────────────────────────────────────
-function autoLayout() {
-  if (!nodes.length) return;
-  const W=cvs.width, H=cvs.height, cx=W/2, cy=H/2;
+function autoLayout(){
+  if(!nodes.length) return;
+  const W=cvs.width,H=cvs.height,cx=W/2,cy=H/2;
   const adj={};
   nodes.forEach(n=>adj[n.id]=[]);
   links.forEach(l=>{adj[l.a].push(l.b);adj[l.b].push(l.a);});
@@ -712,10 +694,10 @@ function autoLayout() {
     return v;
   }
   const allDeg2=nodes.every(n=>adj[n.id].length===2);
-  if (allDeg2&&Object.keys(bfs(nodes[0].id)).length===nodes.length){
+  if(allDeg2&&Object.keys(bfs(nodes[0].id)).length===nodes.length){
     const r=Math.min(W,H)*0.38;
-    nodes.forEach((n,i)=>{const a=(2*Math.PI*i/nodes.length)-Math.PI/2;n.x=cx+r*Math.cos(a);n.y=cy+r*Math.sin(a);});
-    draw(); return;
+    nodes.forEach((n,i)=>{const a=(2*Math.PI*i/nodes.length)-Math.PI/2;n.x=cx+r*Math.cos(a)-panX;n.y=cy+r*Math.sin(a)-panY;});
+    draw();return;
   }
   const root=nodes.reduce((b,n)=>adj[n.id].length>adj[b.id].length?n:b,nodes[0]);
   const parent={[root.id]:null},level={[root.id]:0},order=[root.id],q=[root.id];
@@ -725,201 +707,140 @@ function autoLayout() {
   const padX=80,padY=80,uW=W-padX*2,uH=H-padY*2,rH=maxL>0?uH/maxL:0;
   for(let lv=0;lv<=maxL;lv++){
     const row=levels[lv]||[],count=row.length;
-    row.forEach((id,i)=>{const n=nodes.find(nd=>nd.id===id);n.x=count===1?cx:padX+(uW/(count-1))*i;n.y=padY+lv*rH;});
+    row.forEach((id,i)=>{
+      const n=nodes.find(nd=>nd.id===id);
+      n.x=(count===1?cx:padX+(uW/(count-1))*i)-panX;
+      n.y=(padY+lv*rH)-panY;
+    });
   }
   const pos2=new Set(order);
-  nodes.filter(n=>!pos2.has(n.id)).forEach((n,i)=>{n.x=padX+i*100;n.y=H-50;});
+  nodes.filter(n=>!pos2.has(n.id)).forEach((n,i)=>{n.x=padX+i*100-panX;n.y=H-50-panY;});
   draw();
 }
 
-function showHelp() {
-  const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fiber Stick Map — Help</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #ccc;
-    padding: 24px 20px 48px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
-  h1 { color: #00d4ff; font-size: 18px; margin-bottom: 6px; }
-  .subtitle { font-size: 12px; color: #666; margin-bottom: 20px; }
-  h2 { color: #f0c040; font-size: 12px; text-transform: uppercase;
-    letter-spacing: 0.7px; margin: 22px 0 8px;
-    border-bottom: 1px solid #0f3460; padding-bottom: 5px; }
-  p { font-size: 13px; margin-bottom: 8px; }
-  ul { padding-left: 18px; margin-bottom: 8px; }
-  li { font-size: 13px; margin-bottom: 5px; }
-  b { color: #eee; }
-  code { background: #0f3460; padding: 1px 6px; border-radius: 3px;
-    font-family: monospace; font-size: 12px; color: #f0c040; }
-  .example { background: #0d1a33; border: 1px solid #0f3460; border-radius: 6px;
-    padding: 10px 14px; margin: 10px 0; font-family: monospace; font-size: 12px;
-    color: #f0c040; line-height: 2; }
-  .tip { background: #0d1a33; border-left: 3px solid #00d4ff;
-    padding: 8px 12px; margin: 8px 0; font-size: 12px; color: #aaa; border-radius: 0 4px 4px 0; }
-  .close-wrap { position: fixed; bottom: 0; left: 0; right: 0;
-    background: #16213e; border-top: 1px solid #0f3460; padding: 10px 20px; }
-  .close-btn { display: block; width: 100%; max-width: 600px; margin: 0 auto;
-    background: #0f3460; color: #eee; border: 1px solid #1a4a8a;
-    padding: 10px; border-radius: 6px; font-size: 14px; cursor: pointer;
-    touch-action: manipulation; }
-  .close-btn:active { background: #1a5299; }
-</style>
-</head>
-<body>
-  <h1>📡 Fiber Stick Map</h1>
-  <p class="subtitle">Quick reference guide</p>
-
-  <h2>Modes — Left Sidebar</h2>
-  <ul>
-    <li><b>＋ Add Site</b> — Tap or click the canvas to place a new node. Set the name, color, and shape in the Format bar before placing.</li>
-    <li><b>⟷ Connect</b> — Tap one site, then tap another to draw a link between them. A label editor opens immediately — hit Enter to save or cancel to skip.</li>
-    <li><b>✏️ Edit</b> — Tap any site or link to open its properties. Edit name, color, shape, label, or line style.</li>
-    <li><b>✥ Move</b> — Drag any site to a new position. Works with mouse drag or touch drag.</li>
-    <li><b>✕ Delete</b> — Tap any site or link to remove it. Deleting a site also removes all its connected links.</li>
-  </ul>
-
-  <h2>Format Bar</h2>
-  <ul>
-    <li><b>Site Name / Color / Shape</b> — Applied to each new site placed in Add mode.</li>
-    <li><b>Link Color / Style</b> — Applied to each new link drawn in Connect mode. Styles: Solid, Dashed, Dotted.</li>
-    <li><b>BG</b> — Background color of the canvas. Updates live.</li>
-  </ul>
-
-  <h2>Node Shapes</h2>
-  <ul>
-    <li><b>Circle</b> — General node or splice point</li>
-    <li><b>Square</b> — Terminal or distribution point</li>
-    <li><b>Diamond</b> — Splice enclosure or passive node</li>
-    <li><b>Hub</b> — Headend, hub, or central office</li>
-  </ul>
-
-  <h2>Bulk Add Sites</h2>
-  <p>Use the Bulk Add panel to quickly define a network. The syntax is simple:</p>
-  <ul>
-    <li>Sites on the same line separated by <code>,</code> are placed and <b>auto-connected</b> left to right.</li>
-    <li>A site on its own line is placed <b>floating</b> with no connections.</li>
-    <li>If a site name <b>already exists</b> on the canvas it is reused — useful for branching off existing nodes.</li>
-  </ul>
-  <div class="example">
-    HUB-1, Node-A, Node-B, Node-C<br>
-    Term-1<br>
-    Node-C, Term-2, Term-3
-  </div>
-  <p>Result: HUB-1 → Node-A → Node-B → Node-C as a chain, Term-1 floating, and Node-C extended to Term-2 → Term-3.</p>
-  <div class="tip">After Bulk Add, tap <b>Auto-Layout</b> to instantly tidy the map into a clean tree.</div>
-
-  <h2>Auto-Layout</h2>
-  <ul>
-    <li><b>Tree / Branch</b> — Detects the root node and arranges everything into horizontal tiers top to bottom.</li>
-    <li><b>Ring</b> — If every node has exactly 2 connections, arranges them evenly in a circle.</li>
-    <li>Unconnected nodes are placed along the bottom edge. Use Move to reposition them.</li>
-  </ul>
-
-  <h2>File Controls</h2>
-  <ul>
-    <li><b>💾 Export</b> — Saves your map as a <code>.json</code> file. Chrome desktop shows a Save As dialog. Android saves to Downloads.</li>
-    <li><b>📂 Load</b> — Opens a file browser to load a previously saved <code>.json</code> map.</li>
-    <li><b>🖼 PNG</b> — Exports the canvas as a PNG image. Choose to include the background or export transparent.</li>
-    <li><b>🗑 Clear</b> — Wipes the canvas after confirmation.</li>
-  </ul>
-
-  <h2>Tips</h2>
-  <ul>
-    <li>Link labels can hold anything — footage, fiber count, cable ID, route name.</li>
-    <li>You can run multiple Bulk Adds in stages to build complex networks incrementally.</li>
-    <li>On desktop, hover over nodes and links to highlight them before clicking.</li>
-    <li>The <code>.json</code> export preserves everything including background color — use it to save and resume work.</li>
-  </ul>
-
-  <div class="close-wrap">
-    <button class="close-btn" onclick="window.close()">✕ Close Help</button>
-  </div>
-</body>
-</html>`;
-  const blob = new Blob([html], { type: 'text/html' });
-  const url = URL.createObjectURL(blob);
-  const w = window.open(url, '_blank', 'width=640,height=700');
-  if (!w) {
-    // Fallback if popups blocked: inject into an iframe overlay
-    const ov = document.createElement('div');
-    ov.style.cssText = 'position:fixed;inset:0;z-index:300;background:#1a1a2e;overflow:auto;';
-    ov.innerHTML = html;
-    // Replace close button to remove overlay instead of closing window
-    document.body.appendChild(ov);
-    const btn = ov.querySelector('.close-btn');
-    if (btn) btn.onclick = () => document.body.removeChild(ov);
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-}
-
 // ── Export PNG ────────────────────────────────────────────────────
-function exportPNG() {
-  const useBg = confirm('Include background?\nOK = yes  |  Cancel = transparent');
-  if (useBg) {
-    triggerDownload(cvs.toDataURL('image/png'), 'stickmap.png');
+function exportPNG(){
+  const useBg=confirm('Include background?\nOK = yes  |  Cancel = transparent');
+  let dataUrl;
+  if(useBg){
+    dataUrl=cvs.toDataURL('image/png');
   } else {
     const tmp=document.createElement('canvas');
-    tmp.width=cvs.width; tmp.height=cvs.height;
-    drawScene(tmp.getContext('2d'), true);
-    triggerDownload(tmp.toDataURL('image/png'), 'stickmap.png');
+    tmp.width=cvs.width;tmp.height=cvs.height;
+    drawScene(tmp.getContext('2d'),cvs.width,cvs.height,true,panX,panY);
+    dataUrl=tmp.toDataURL('image/png');
   }
-}
-
-function triggerDownload(dataUrl, filename) {
-  const a=document.createElement('a');
-  a.href=dataUrl; a.download=filename; a.click();
+  const a=document.createElement('a');a.href=dataUrl;a.download='stickmap.png';a.click();
 }
 
 // ── Export / Import JSON ──────────────────────────────────────────
-async function exportJSON() {
-  const blob = new Blob([JSON.stringify({nodes,links,idCounter,bgColor},null,2)],{type:'application/json'});
-  if (window.showSaveFilePicker) {
-    try {
+async function exportJSON(){
+  const data=JSON.stringify({nodes,links,idCounter,bgColor,theme:currentTheme,panX,panY},null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  if(window.showSaveFilePicker){
+    try{
       const fh=await window.showSaveFilePicker({suggestedName:'stickmap.json',
         types:[{description:'Stick Map',accept:{'application/json':['.json']}}]});
-      const w=await fh.createWritable(); await w.write(blob); await w.close(); return;
-    } catch(e){ if(e.name==='AbortError') return; }
+      const w=await fh.createWritable();await w.write(blob);await w.close();return;
+    }catch(e){if(e.name==='AbortError')return;}
   }
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='stickmap.json'; a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='stickmap.json';a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
-
-async function importJSON() {
-  if (window.showOpenFilePicker) {
-    try {
-      const [fh]=await window.showOpenFilePicker({
-        types:[{description:'Stick Map',accept:{'application/json':['.json']}}]});
-      applyMap(await(await fh.getFile()).text()); return;
-    } catch(e){ if(e.name==='AbortError') return; }
+async function importJSON(){
+  if(window.showOpenFilePicker){
+    try{
+      const[fh]=await window.showOpenFilePicker({types:[{description:'Stick Map',accept:{'application/json':['.json']}}]});
+      applyMap(await(await fh.getFile()).text());return;
+    }catch(e){if(e.name==='AbortError')return;}
   }
-  const inp=document.createElement('input');
-  inp.type='file'; inp.accept='.json,application/json';
-  inp.onchange=e=>{
-    const f=e.target.files[0]; if(!f) return;
-    const r=new FileReader(); r.onload=ev=>applyMap(ev.target.result); r.readAsText(f);
-  };
+  const inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>applyMap(ev.target.result);r.readAsText(f);};
   inp.click();
 }
-
-function applyMap(text) {
-  try {
+function applyMap(text){
+  try{
     const d=JSON.parse(text);
-    nodes=d.nodes||[]; links=d.links||[];
+    nodes=d.nodes||[];links=d.links||[];
     idCounter=d.idCounter||(nodes.length+links.length+1);
+    if(d.panX!==undefined){panX=d.panX;panY=d.panY;}
     if(d.bgColor){bgColor=d.bgColor;document.getElementById('bg-color').value=bgColor;}
-    draw();
-  } catch { alert('Invalid map file.'); }
+    if(d.theme) applyTheme(d.theme);
+    else draw();
+  }catch{alert('Invalid map file.');}
 }
 
 // ── Clear ─────────────────────────────────────────────────────────
-function clearAll() {
-  if (!confirm('Clear everything?')) return;
-  nodes=[]; links=[]; connectStart=null; moveSelected=null; draw();
+function clearAll(){
+  if(!confirm('Clear everything?')) return;
+  nodes=[];links=[];connectStart=null;dragging=null;panX=0;panY=0;draw();
 }
+
+// ── Help ──────────────────────────────────────────────────────────
+function showHelp(){
+  const html=`<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Fiber Stick Map — Help</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#1a1a2e;color:#ccc;padding:24px 20px 80px;max-width:600px;margin:0 auto;line-height:1.6}
+h1{color:#00d4ff;font-size:18px;margin-bottom:6px}
+.sub{font-size:12px;color:#666;margin-bottom:20px}
+h2{color:#f0c040;font-size:12px;text-transform:uppercase;letter-spacing:.7px;margin:22px 0 8px;border-bottom:1px solid #0f3460;padding-bottom:5px}
+p{font-size:13px;margin-bottom:8px}ul{padding-left:18px;margin-bottom:8px}
+li{font-size:13px;margin-bottom:5px}b{color:#eee}
+code{background:#0f3460;padding:1px 6px;border-radius:3px;font-family:monospace;font-size:12px;color:#f0c040}
+.ex{background:#0d1a33;border:1px solid #0f3460;border-radius:6px;padding:10px 14px;margin:10px 0;font-family:monospace;font-size:12px;color:#f0c040;line-height:2}
+.wrap{position:fixed;bottom:0;left:0;right:0;background:#16213e;border-top:1px solid #0f3460;padding:10px 20px}
+.cb{display:block;width:100%;max-width:600px;margin:0 auto;background:#0f3460;color:#eee;border:1px solid #1a4a8a;padding:10px;border-radius:6px;font-size:14px;cursor:pointer}
+</style></head><body>
+<h1>📡 Fiber Stick Map</h1><p class="sub">Quick reference guide</p>
+<h2>Modes — Left Sidebar</h2><ul>
+<li><b>＋ Add Site</b> — Tap/click canvas to place a node. Set name, color, and shape in the Format bar first.</li>
+<li><b>⟷ Connect</b> — Tap one site then another to draw a link. Label editor opens immediately.</li>
+<li><b>✏️ Edit</b> — Tap any site or link to open its full property editor.</li>
+<li><b>✥ Move</b> — Drag any site to reposition it.</li>
+<li><b>🖐 Pan</b> — Drag the canvas to scroll the view. Double-tap to reset to center. Pan is limited so you can't drift too far.</li>
+<li><b>✕ Delete</b> — Tap any site or link to remove it. Deleting a site removes its links too.</li></ul>
+<h2>Format Bar</h2><ul>
+<li><b>Site</b> — Name, color, and shape for new sites placed in Add mode.</li>
+<li><b>Link</b> — Color and style (Solid/Dashed/Dotted) for new links drawn in Connect mode.</li>
+<li><b>BG</b> — Canvas background color. Updates live.</li></ul>
+<h2>Node Shapes</h2><ul>
+<li><b>Circle</b> — General node / splice point</li>
+<li><b>Square</b> — Terminal / distribution point</li>
+<li><b>Diamond</b> — Splice enclosure / passive node</li>
+<li><b>Hub</b> — Headend / hub / central office</li></ul>
+<h2>Bulk Add Sites</h2>
+<p>Sites separated by <code>,</code> on one line are auto-connected. Sites on their own line are floating. Existing site names are reused.</p>
+<div class="ex">HUB-1, Node-A, Node-B, Node-C<br>Term-1<br>Node-C, Term-2, Term-3</div>
+<h2>Auto-Layout</h2><ul>
+<li><b>Tree</b> — Tidy horizontal tiers from root to leaves.</li>
+<li><b>Ring</b> — Circle layout when every node has exactly 2 connections.</li>
+<li>Unconnected nodes park at the bottom edge.</li></ul>
+<h2>File Controls</h2><ul>
+<li><b>💾 Export</b> — Save as <code>.json</code>. Chrome desktop shows Save As dialog; Android saves to Downloads.</li>
+<li><b>📂 Load</b> — Open a saved <code>.json</code> map file.</li>
+<li><b>🖼 PNG</b> — Export canvas as image, with or without background.</li>
+<li><b>🗑 Clear</b> — Wipe canvas after confirmation.</li></ul>
+<div class="wrap"><button class="cb" onclick="window.close()">✕ Close Help</button></div>
+</body></html>`;
+  const blob=new Blob([html],{type:'text/html'});
+  const url=URL.createObjectURL(blob);
+  const w=window.open(url,'_blank','width=640,height=700');
+  if(!w){
+    const ov=document.createElement('div');
+    ov.style.cssText='position:fixed;inset:0;z-index:300;background:#1a1a2e;overflow:auto;';
+    ov.innerHTML=html;document.body.appendChild(ov);
+    const btn=ov.querySelector('.cb');
+    if(btn) btn.onclick=()=>document.body.removeChild(ov);
+  }
+  setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+applyTheme('minesweeper');
+resize();
 </script>
 </body>
 </html>
