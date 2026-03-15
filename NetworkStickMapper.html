@@ -149,10 +149,11 @@ canvas { display: block; touch-action: none; }
     <div class="section-title" style="margin-top:6px;">Edit</div>
     <button id="btn-edit" onclick="setMode('edit')">✏️ Edit</button>
     <button id="btn-move" onclick="setMode('move')">✥ Move</button>
+
     <button id="btn-delete" onclick="setMode('delete')">✕ Delete</button>
 
     <div class="section-title" style="margin-top:6px;">Tools</div>
-    <button onclick="toggleImport()">📋 Import Sites</button>
+    <button onclick="toggleImport()">📋 Bulk Add Sites</button>
     <button onclick="autoLayout()">⬡ Auto-Layout</button>
 
     <div id="hint-box">Tap canvas to place a site.</div>
@@ -163,8 +164,9 @@ canvas { display: block; touch-action: none; }
 
   <!-- Import panel -->
   <div id="import-panel">
-    <h3>📋 Import Sites</h3>
-    <p>One site per line, or comma separated.</p>
+    <h3>📋 Bulk Add Sites</h3>
+    <p>Each <b>line</b> = one chain. Sites separated by <b>commas</b> on the same line are auto-connected left→right. Sites on their own line are placed floating.</p>
+    <p style="color:#f0c040;margin-top:2px;">Example:<br><code>HUB-1, Node-A, Node-B<br>Term-1<br>Node-C, Term-2, Term-3</code></p>
     <textarea id="site-list-input" placeholder="HUB-1&#10;Node-A&#10;Node-B&#10;Term-1"></textarea>
     <div class="pe-row">
       <label>Shape</label>
@@ -224,6 +226,7 @@ const wrap = document.getElementById('canvas-wrap');
 let nodes = [], links = [];
 let mode = 'add';
 let connectStart = null, moveSelected = null, popupTarget = null;
+let dragging = null, dragOX = 0, dragOY = 0;
 let hoverNode = null, hoverLink = null;
 let bgColor = '#1a1a2e';
 let idCounter = 1;
@@ -236,17 +239,18 @@ resize();
 
 // ── Mode ──────────────────────────────────────────────────────────
 function setMode(m) {
-  mode = m; connectStart = null; moveSelected = null; closePopup();
+  mode = m; connectStart = null; moveSelected = null; dragging = null; closePopup();
   ['add','connect','edit','move','delete'].forEach(x =>
     document.getElementById('btn-'+x).classList.toggle('active', x === m));
   const hints = {
     add:     'Tap canvas to place a site.',
     connect: 'Tap a site to start, tap another to connect.',
     edit:    'Tap any site or link to edit it.',
-    move:    'Tap a site to select (glows), tap destination to move.',
+    move:    'Drag any site to reposition it.',
     delete:  'Tap a site or link to delete it.'
   };
   document.getElementById('hint-box').textContent = hints[m];
+  cvs.style.cursor = m==='move' ? 'grab' : 'default';
   draw();
 }
 
@@ -328,14 +332,24 @@ function handleTap(x, y, clientX, clientY) {
 cvs.addEventListener('mousedown', e => {
   if (e.button !== 0) return;
   const {x,y} = evPos(e);
+  if (mode === 'move') {
+    const n = nodeAt(x, y);
+    if (n) { dragging = n; dragOX = x-n.x; dragOY = y-n.y; cvs.style.cursor='grabbing'; }
+    return;
+  }
   handleTap(x, y, e.clientX, e.clientY);
 });
 cvs.addEventListener('mousemove', e => {
   const {x,y} = evPos(e);
+  if (dragging) { dragging.x = x-dragOX; dragging.y = y-dragOY; draw(); return; }
   const pN=hoverNode, pL=hoverLink;
   hoverNode = nodeAt(x,y);
   hoverLink = hoverNode ? null : linkNear(x,y);
   if (hoverNode!==pN||hoverLink!==pL) draw();
+});
+cvs.addEventListener('mouseup', () => {
+  dragging = null;
+  cvs.style.cursor = mode==='move' ? 'grab' : 'default';
 });
 
 // ── Touch ─────────────────────────────────────────────────────────
@@ -345,13 +359,31 @@ cvs.addEventListener('touchstart', e => {
   const t = e.changedTouches[0];
   const r = cvs.getBoundingClientRect();
   const x = t.clientX-r.left, y = t.clientY-r.top;
+  if (mode === 'move') {
+    const n = nodeAt(x, y);
+    if (n) { dragging = n; dragOX = x-n.x; dragOY = y-n.y; }
+    return;
+  }
   const now = Date.now();
   if (now - lastTap < 300) { lastTap = 0; return; }
   lastTap = now;
   handleTap(x, y, t.clientX, t.clientY);
 }, { passive: false });
-cvs.addEventListener('touchmove',  e => e.preventDefault(), { passive: false });
-cvs.addEventListener('touchend',   e => e.preventDefault(), { passive: false });
+
+cvs.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (!dragging) return;
+  const t = e.changedTouches[0];
+  const r = cvs.getBoundingClientRect();
+  dragging.x = t.clientX-r.left-dragOX;
+  dragging.y = t.clientY-r.top-dragOY;
+  draw();
+}, { passive: false });
+
+cvs.addEventListener('touchend', e => {
+  e.preventDefault();
+  dragging = null;
+}, { passive: false });
 
 // ── Popup ─────────────────────────────────────────────────────────
 function openPopup(type, obj, cx, cy) {
@@ -479,15 +511,45 @@ function importSites() {
   const raw   = document.getElementById('site-list-input').value;
   const shape = document.getElementById('import-shape').value;
   const color = document.getElementById('import-color').value;
-  const names = raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
-  if (!names.length) return;
-  const cols=Math.ceil(Math.sqrt(names.length)), colW=120, rowH=90;
-  const startX=cvs.width/2-((cols-1)*colW)/2;
-  const startY=cvs.height/2-(Math.ceil(names.length/cols)-1)*rowH/2;
-  names.forEach((name,i)=>{
-    nodes.push({id:uid(), x:startX+(i%cols)*colW, y:startY+Math.floor(i/cols)*rowH, name, color, shape});
+  const lcolor = document.getElementById('link-color').value;
+  const lstyle = document.getElementById('link-style').value;
+
+  const lines = raw.split('\n').map(l=>l.trim()).filter(Boolean);
+  if (!lines.length) return;
+
+  // Collect all new nodes per line so we can layout them after
+  const chains = lines.map(line =>
+    line.split(',').map(s=>s.trim()).filter(Boolean)
+  );
+
+  // Count total nodes for grid positioning
+  const totalNodes = chains.reduce((s,c)=>s+c.length, 0);
+  const cols = Math.ceil(Math.sqrt(totalNodes));
+  const colW = 130, rowH = 90;
+  const startX = cvs.width/2 - ((cols-1)*colW)/2;
+  const startY = cvs.height/2 - (Math.ceil(totalNodes/cols)-1)*rowH/2;
+
+  let idx = 0;
+  chains.forEach(chain => {
+    const newNodes = chain.map(name => {
+      // Reuse existing node with same name if present
+      const existing = nodes.find(n => n.name === name);
+      if (existing) return existing;
+      const col = idx % cols, row = Math.floor(idx/cols);
+      const node = { id:uid(), x:startX+col*colW, y:startY+row*rowH, name, color, shape };
+      nodes.push(node);
+      idx++;
+      return node;
+    });
+    // Connect chain links
+    for (let i=0; i<newNodes.length-1; i++) {
+      const a=newNodes[i], b=newNodes[i+1];
+      const exists = links.find(l=>(l.a===a.id&&l.b===b.id)||(l.a===b.id&&l.b===a.id));
+      if (!exists) links.push({ id:uid(), a:a.id, b:b.id, label:'', color:lcolor, style:lstyle });
+    }
   });
-  document.getElementById('site-list-input').value='';
+
+  document.getElementById('site-list-input').value = '';
   toggleImport(); draw();
 }
 
