@@ -2,142 +2,172 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Fiber Stick Map</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: Arial, sans-serif; background: #1a1a2e; color: #eee; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-#toolbar {
+/* ── Top bars ── */
+#bar-file, #bar-format {
   background: #16213e;
-  padding: 8px 12px;
-  display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
-  border-bottom: 2px solid #0f3460; flex-shrink: 0;
+  padding: 5px 10px;
+  display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+  border-bottom: 1px solid #0f3460; flex-shrink: 0;
 }
-.tb-group { display: flex; gap: 6px; align-items: center; }
-.tb-sep { width: 1px; height: 28px; background: #0f3460; }
+#bar-file { border-bottom: 1px solid #0f3460; }
+#bar-format { border-bottom: 2px solid #0f3460; }
+
+.bar-label { font-size: 11px; color: #666; font-weight: bold; letter-spacing: 0.5px; padding-right: 2px; }
+.tb-sep { width: 1px; height: 26px; background: #0f3460; margin: 0 2px; }
+
 button {
   background: #0f3460; color: #eee; border: 1px solid #1a4a8a;
-  padding: 5px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;
+  padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 12px;
+  min-height: 32px; touch-action: manipulation; user-select: none; white-space: nowrap;
 }
-button:hover { background: #1a5299; }
+button:hover, button:active { background: #1a5299; }
 button.active { background: #e94560; border-color: #e94560; }
-label { font-size: 12px; color: #aaa; }
+
 input[type=text] {
   background: #0f3460; border: 1px solid #1a4a8a; color: #eee;
-  padding: 4px 8px; border-radius: 4px; width: 130px; font-size: 12px;
+  padding: 4px 7px; border-radius: 4px; font-size: 12px; min-height: 32px;
 }
-input[type=color] { width: 32px; height: 28px; border: none; cursor: pointer; border-radius: 4px; padding: 1px; }
+input[type=color] {
+  width: 32px; height: 32px; border: none; cursor: pointer;
+  border-radius: 4px; padding: 2px; touch-action: manipulation;
+}
 select {
   background: #0f3460; border: 1px solid #1a4a8a; color: #eee;
-  padding: 4px 6px; border-radius: 4px; font-size: 12px;
+  padding: 4px 6px; border-radius: 4px; font-size: 12px; min-height: 32px;
 }
-#hint { font-size: 11px; color: #aaa; padding: 2px 0; width: 100%; }
+label { font-size: 12px; color: #aaa; white-space: nowrap; }
 
+/* ── Main area ── */
 #main { display: flex; flex: 1; overflow: hidden; }
-#canvas-wrap { flex: 1; overflow: hidden; position: relative; }
-canvas { display: block; }
 
-/* Import panel */
+/* ── Left sidebar (placement controls) ── */
+#sidebar {
+  width: 130px; background: #16213e; border-right: 2px solid #0f3460;
+  display: flex; flex-direction: column; gap: 4px; padding: 8px 6px;
+  flex-shrink: 0; overflow-y: auto;
+}
+#sidebar .section-title {
+  font-size: 10px; color: #555; font-weight: bold; letter-spacing: 0.6px;
+  text-transform: uppercase; padding: 4px 0 2px 2px;
+  border-bottom: 1px solid #0f3460; margin-bottom: 2px;
+}
+#sidebar button { width: 100%; text-align: left; padding: 7px 8px; font-size: 12px; }
+#hint-box {
+  margin-top: auto; background: #0d1a33; border-radius: 4px;
+  padding: 7px 8px; font-size: 11px; color: #888; line-height: 1.5;
+  border: 1px solid #0f3460;
+}
+
+/* ── Canvas ── */
+#canvas-wrap { flex: 1; overflow: hidden; position: relative; }
+canvas { display: block; touch-action: none; }
+
+/* ── Import panel (slides in from right) ── */
 #import-panel {
-  width: 260px; background: #16213e; border-left: 2px solid #0f3460;
-  display: none; flex-direction: column; padding: 12px; gap: 8px; flex-shrink: 0;
+  width: 240px; background: #16213e; border-left: 2px solid #0f3460;
+  display: none; flex-direction: column; padding: 12px; gap: 8px;
+  flex-shrink: 0; overflow-y: auto;
 }
 #import-panel.open { display: flex; }
-#import-panel h3 { font-size: 13px; color: #00d4ff; margin-bottom: 2px; }
+#import-panel h3 { font-size: 13px; color: #00d4ff; }
 #import-panel p { font-size: 11px; color: #888; line-height: 1.5; }
 #site-list-input {
-  flex: 1; min-height: 180px; background: #0f3460; border: 1px solid #1a4a8a;
+  flex: 1; min-height: 160px; background: #0f3460; border: 1px solid #1a4a8a;
   color: #eee; padding: 8px; border-radius: 4px; font-size: 12px;
   resize: none; font-family: monospace;
 }
-#import-panel .btn-row { display: flex; gap: 6px; }
-#import-panel .btn-row button { flex: 1; }
-.shape-row { display: flex; gap: 6px; align-items: center; }
-.shape-row label { font-size: 11px; }
+.btn-row { display: flex; gap: 6px; }
+.btn-row button { flex: 1; }
 
-/* Popup editor (shared for links and nodes) */
+/* ── Popup editor ── */
 #popup-editor {
   display: none; position: fixed; background: #16213e;
   border: 1px solid #1a4a8a; border-radius: 8px; padding: 12px;
-  z-index: 200; box-shadow: 0 4px 20px #0008; min-width: 240px;
+  z-index: 200; box-shadow: 0 4px 20px #0008; min-width: 230px;
 }
 #popup-editor h4 { font-size: 12px; color: #00d4ff; margin-bottom: 8px; }
 .pe-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-.pe-row label { font-size: 11px; color: #aaa; width: 48px; flex-shrink: 0; }
+.pe-row label { font-size: 11px; color: #aaa; width: 46px; flex-shrink: 0; }
 .pe-row input[type=text] { flex: 1; min-width: 0; width: auto; }
-.pe-row input[type=color] { width: 32px; height: 28px; border: none; border-radius: 4px; padding: 1px; cursor: pointer; }
+.pe-row input[type=color] { width: 32px; height: 28px; }
 .pe-row select { flex: 1; }
 .pe-btns { display: flex; gap: 6px; margin-top: 8px; }
-.pe-btns button { flex: 1; padding: 5px; font-size: 12px; min-height: 30px; }
-
-@media print {
-  body { background: white; color: black; }
-  #toolbar, #import-panel { display: none !important; }
-  #main { display: block; }
-  canvas { width: 100% !important; height: auto !important; }
-}
+.pe-btns button { flex: 1; padding: 7px; font-size: 12px; }
 </style>
 </head>
 <body>
 
-<div id="toolbar">
-  <div class="tb-group">
+<!-- Row 1: File controls -->
+<div id="bar-file">
+  <span class="bar-label">FILE</span>
+  <button onclick="exportJSON()">💾 Export</button>
+  <button onclick="importJSON()">📂 Load</button>
+  <button onclick="exportPNG()">🖼 PNG</button>
+  <div class="tb-sep"></div>
+  <button onclick="clearAll()" style="background:#5a1a1a;border-color:#8a2020;">🗑 Clear</button>
+</div>
+
+<!-- Row 2: Formatting controls -->
+<div id="bar-format">
+  <span class="bar-label">SITE</span>
+  <input type="text" id="site-name" value="Site" style="width:100px;" placeholder="Name" />
+  <input type="color" id="node-color" value="#00d4ff" title="Node color" />
+  <select id="node-shape">
+    <option value="circle">Circle</option>
+    <option value="square">Square</option>
+    <option value="diamond">Diamond</option>
+    <option value="house">Hub</option>
+  </select>
+  <div class="tb-sep"></div>
+  <span class="bar-label">LINK</span>
+  <input type="color" id="link-color" value="#ffffff" title="Link color" />
+  <select id="link-style">
+    <option value="solid">Solid</option>
+    <option value="dashed">Dashed</option>
+    <option value="dotted">Dotted</option>
+  </select>
+  <div class="tb-sep"></div>
+  <span class="bar-label">BG</span>
+  <input type="color" id="bg-color" value="#1a1a2e" oninput="setBg(this.value)" />
+</div>
+
+<!-- Main area -->
+<div id="main">
+
+  <!-- Left sidebar: placement/mode controls -->
+  <div id="sidebar">
+    <div class="section-title">Place</div>
     <button id="btn-add" class="active" onclick="setMode('add')">＋ Add Site</button>
     <button id="btn-connect" onclick="setMode('connect')">⟷ Connect</button>
+
+    <div class="section-title" style="margin-top:6px;">Edit</div>
     <button id="btn-edit" onclick="setMode('edit')">✏️ Edit</button>
     <button id="btn-move" onclick="setMode('move')">✥ Move</button>
     <button id="btn-delete" onclick="setMode('delete')">✕ Delete</button>
-  </div>
-  <div class="tb-sep"></div>
-  <div class="tb-group">
-    <label>Name:</label>
-    <input type="text" id="site-name" value="Site" />
-  </div>
-  <div class="tb-group">
-    <label>Node:</label>
-    <input type="color" id="node-color" value="#00d4ff" />
-    <select id="node-shape">
-      <option value="circle">Circle</option>
-      <option value="square">Square</option>
-      <option value="diamond">Diamond</option>
-      <option value="house">Hub</option>
-    </select>
-  </div>
-  <div class="tb-group">
-    <label>Link:</label>
-    <input type="color" id="link-color" value="#ffffff" />
-    <select id="link-style">
-      <option value="solid">Solid</option>
-      <option value="dashed">Dashed</option>
-      <option value="dotted">Dotted</option>
-    </select>
-  </div>
-  <div class="tb-sep"></div>
-  <div class="tb-group">
+
+    <div class="section-title" style="margin-top:6px;">Tools</div>
     <button onclick="toggleImport()">📋 Import Sites</button>
-    <button onclick="autoLayout()">⬡ Auto Layout</button>
-    <label>BG:</label>
-    <input type="color" id="bg-color" value="#1a1a2e" title="Background color" oninput="setBg(this.value)" />
-    <button onclick="printMap()">🖨 Print</button>
-    <button onclick="saveMap()">💾 Save</button>
-    <button onclick="loadMap()">📂 Load</button>
-    <button onclick="clearAll()" style="background:#5a1a1a;border-color:#8a2020;">🗑 Clear</button>
-  </div>
-  <div id="hint">Click canvas to place a site.</div>
-</div>
+    <button onclick="autoLayout()">⬡ Auto-Layout</button>
 
-<div id="main">
-  <div id="canvas-wrap">
-    <canvas id="cvs"></canvas>
+    <div id="hint-box">Tap canvas to place a site.</div>
   </div>
 
+  <!-- Canvas -->
+  <div id="canvas-wrap"><canvas id="cvs"></canvas></div>
+
+  <!-- Import panel -->
   <div id="import-panel">
     <h3>📋 Import Sites</h3>
-    <p>Enter one site name per line. You can also paste a comma or newline separated list.</p>
-    <textarea id="site-list-input" placeholder="HUB-1&#10;Node-A&#10;Node-B&#10;Node-C&#10;Term-1&#10;Term-2"></textarea>
-    <div class="shape-row">
-      <label>Default shape:</label>
+    <p>One site per line, or comma separated.</p>
+    <textarea id="site-list-input" placeholder="HUB-1&#10;Node-A&#10;Node-B&#10;Term-1"></textarea>
+    <div class="pe-row">
+      <label>Shape</label>
       <select id="import-shape">
         <option value="circle">Circle</option>
         <option value="square">Square</option>
@@ -150,10 +180,11 @@ canvas { display: block; }
       <button onclick="importSites()">✔ Add Sites</button>
       <button onclick="toggleImport()">✕ Close</button>
     </div>
-    <p style="color:#f0c040; margin-top:4px;">Existing sites are preserved. Sites are laid out in a grid — use Auto Layout or Move to arrange.</p>
+    <p style="color:#f0c040;margin-top:4px;">Existing sites are kept. Use Auto-Layout or Move to arrange.</p>
   </div>
 </div>
 
+<!-- Popup editor -->
 <div id="popup-editor">
   <h4 id="pe-title">Edit</h4>
   <div id="pe-node-fields">
@@ -192,251 +223,163 @@ const wrap = document.getElementById('canvas-wrap');
 
 let nodes = [], links = [];
 let mode = 'add';
-let connectStart = null;
-let moveSelected = null;
+let connectStart = null, moveSelected = null, popupTarget = null;
 let hoverNode = null, hoverLink = null;
-let idCounter = 1;
-
 let bgColor = '#1a1a2e';
+let idCounter = 1;
+function uid() { return idCounter++; }
 
-function setBg(val) {
-  bgColor = val;
-  draw();
-}
-
-function resize() {
-  cvs.width = wrap.clientWidth;
-  cvs.height = wrap.clientHeight;
-  draw();
-}
+// ── Resize ────────────────────────────────────────────────────────
+function resize() { cvs.width = wrap.clientWidth; cvs.height = wrap.clientHeight; draw(); }
 window.addEventListener('resize', resize);
 resize();
 
 // ── Mode ──────────────────────────────────────────────────────────
 function setMode(m) {
-  mode = m;
-  connectStart = null;
-  moveSelected = null;
-  closePopup();
-  dragging = null;
-  ['add','connect','move','delete'].forEach(x =>
-    document.getElementById('btn-'+x).classList.toggle('active', x === m)
-  );
+  mode = m; connectStart = null; moveSelected = null; closePopup();
+  ['add','connect','edit','move','delete'].forEach(x =>
+    document.getElementById('btn-'+x).classList.toggle('active', x === m));
   const hints = {
-    add: 'Click canvas to place a site. Double-click a site to rename it.',
-    connect: 'Click a site to start a link, then click another site to complete it.',
-    move: 'Click a site to select it (it will glow), then click where you want to move it.',
-    delete: 'Click a site or link line to delete it.'
+    add:     'Tap canvas to place a site.',
+    connect: 'Tap a site to start, tap another to connect.',
+    edit:    'Tap any site or link to edit it.',
+    move:    'Tap a site to select (glows), tap destination to move.',
+    delete:  'Tap a site or link to delete it.'
   };
-  document.getElementById('hint').textContent = hints[m];
-  cvs.style.cursor = m === 'move' ? 'grab' : 'crosshair';
+  document.getElementById('hint-box').textContent = hints[m];
   draw();
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
 function nodeAt(x, y) {
-  // Search in reverse so top-drawn nodes get priority
-  for (let i = nodes.length - 1; i >= 0; i--) {
-    const n = nodes[i];
-    if (Math.hypot(n.x - x, n.y - y) < 18) return n;
-  }
+  for (let i = nodes.length-1; i >= 0; i--)
+    if (Math.hypot(nodes[i].x-x, nodes[i].y-y) < 22) return nodes[i];
   return null;
 }
 
 function linkNear(x, y) {
   for (const l of links) {
-    const a = nodes.find(n => n.id === l.a);
-    const b = nodes.find(n => n.id === l.b);
-    if (!a || !b) continue;
-    const dx = b.x - a.x, dy = b.y - a.y;
-    const len2 = dx*dx + dy*dy;
-    if (len2 < 1) continue;
-    const t = Math.max(0, Math.min(1, ((x-a.x)*dx + (y-a.y)*dy) / len2));
-    const px = a.x + t*dx - x, py = a.y + t*dy - y;
-    if (Math.hypot(px, py) < 8) return l;
+    const a = nodes.find(n => n.id===l.a), b = nodes.find(n => n.id===l.b);
+    if (!a||!b) continue;
+    const dx=b.x-a.x, dy=b.y-a.y, len2=dx*dx+dy*dy;
+    if (len2<1) continue;
+    const t = Math.max(0, Math.min(1, ((x-a.x)*dx+(y-a.y)*dy)/len2));
+    if (Math.hypot(a.x+t*dx-x, a.y+t*dy-y) < 10) return l;
   }
   return null;
 }
 
-function pos(e) {
+function evPos(e) {
   const r = cvs.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+  return { x: e.clientX-r.left, y: e.clientY-r.top };
 }
 
-// ── Canvas events ─────────────────────────────────────────────────
-cvs.addEventListener('mousedown', e => {
-  if (e.button !== 0) return;
-  const {x, y} = pos(e);
-
+// ── Unified tap handler ───────────────────────────────────────────
+function handleTap(x, y, clientX, clientY) {
   if (mode === 'edit') {
     const n = nodeAt(x, y);
-    if (n) { openPopup('node', n, e.clientX, e.clientY); return; }
+    if (n) { openPopup('node', n, clientX, clientY); return; }
     const l = linkNear(x, y);
-    if (l) { openPopup('link', l, e.clientX, e.clientY); }
+    if (l) { openPopup('link', l, clientX, clientY); }
     return;
   }
-
   if (mode === 'add') {
-    const name = document.getElementById('site-name').value.trim() || 'Site';
-    nodes.push({
-      id: uid(), x, y, name,
+    nodes.push({ id: uid(), x, y,
+      name:  document.getElementById('site-name').value.trim() || 'Site',
       color: document.getElementById('node-color').value,
-      shape: document.getElementById('node-shape').value
-    });
-    draw();
-    return;
+      shape: document.getElementById('node-shape').value });
+    draw(); return;
   }
-
   if (mode === 'connect') {
     const n = nodeAt(x, y);
     if (!n) return;
-    if (!connectStart) {
-      connectStart = n;
-      draw();
-    } else if (connectStart.id !== n.id) {
-      const exists = links.find(l =>
-        (l.a===connectStart.id && l.b===n.id) || (l.a===n.id && l.b===connectStart.id)
-      );
-      if (!exists) {
-        const newLink = {
-          id: uid(), a: connectStart.id, b: n.id, label: '',
-          color: document.getElementById('link-color').value,
-          style: document.getElementById('link-style').value
-        };
-        links.push(newLink);
-        connectStart = null;
-        draw();
-        promptLinkLabel(newLink, e.clientX, e.clientY);
-      } else {
-        connectStart = null;
-        draw();
-      }
-    } else {
-      connectStart = null;
-      draw();
-    }
+    if (!connectStart) { connectStart = n; draw(); return; }
+    if (connectStart.id === n.id) { connectStart = null; draw(); return; }
+    const exists = links.find(l =>
+      (l.a===connectStart.id&&l.b===n.id)||(l.a===n.id&&l.b===connectStart.id));
+    if (!exists) {
+      const nl = { id: uid(), a: connectStart.id, b: n.id, label: '',
+        color: document.getElementById('link-color').value,
+        style: document.getElementById('link-style').value };
+      links.push(nl);
+      connectStart = null; draw();
+      openPopup('link', nl, clientX, clientY);
+    } else { connectStart = null; draw(); }
     return;
   }
-
   if (mode === 'move') {
     const n = nodeAt(x, y);
     if (n) {
-      if (!moveSelected) {
-        // First click — select node
-        moveSelected = n;
-        draw();
-      } else if (moveSelected.id === n.id) {
-        // Clicked same node — deselect
-        moveSelected = null;
-        draw();
-      } else {
-        // Clicked a different node — move selected to that node's spot? No —
-        // treat as new selection instead
-        moveSelected = n;
-        draw();
-      }
-    } else if (moveSelected) {
-      // Second click on empty space — move node here
-      moveSelected.x = x;
-      moveSelected.y = y;
-      moveSelected = null;
-      draw();
+      if (!moveSelected || moveSelected.id !== n.id) { moveSelected = n; draw(); return; }
+      moveSelected = null; draw(); return;
     }
+    if (moveSelected) { moveSelected.x = x; moveSelected.y = y; moveSelected = null; draw(); }
     return;
   }
-
   if (mode === 'delete') {
     const n = nodeAt(x, y);
-    if (n) {
-      nodes = nodes.filter(nd => nd.id !== n.id);
-      links = links.filter(l => l.a !== n.id && l.b !== n.id);
-      draw();
-      return;
-    }
+    if (n) { nodes = nodes.filter(nd=>nd.id!==n.id); links = links.filter(l=>l.a!==n.id&&l.b!==n.id); draw(); return; }
     const l = linkNear(x, y);
-    if (l) {
-      links = links.filter(lk => lk.id !== l.id);
-      draw();
-    }
+    if (l) { links = links.filter(lk=>lk.id!==l.id); draw(); }
   }
-});
-
-cvs.addEventListener('mousemove', e => {
-  const {x, y} = pos(e);
-  const prevHN = hoverNode, prevHL = hoverLink;
-  hoverNode = nodeAt(x, y);
-  hoverLink = hoverNode ? null : linkNear(x, y);
-  if (hoverNode !== prevHN || hoverLink !== prevHL) draw();
-});
-
-cvs.addEventListener('mouseup', () => {});
-
-// ── Touch support ─────────────────────────────────────────────────
-function touchPos(e) {
-  const r = cvs.getBoundingClientRect();
-  const t = e.changedTouches[0];
-  return { x: t.clientX - r.left, y: t.clientY - r.top, clientX: t.clientX, clientY: t.clientY };
 }
 
+// ── Mouse ─────────────────────────────────────────────────────────
+cvs.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const {x,y} = evPos(e);
+  handleTap(x, y, e.clientX, e.clientY);
+});
+cvs.addEventListener('mousemove', e => {
+  const {x,y} = evPos(e);
+  const pN=hoverNode, pL=hoverLink;
+  hoverNode = nodeAt(x,y);
+  hoverLink = hoverNode ? null : linkNear(x,y);
+  if (hoverNode!==pN||hoverLink!==pL) draw();
+});
+
+// ── Touch ─────────────────────────────────────────────────────────
 let lastTap = 0;
 cvs.addEventListener('touchstart', e => {
   e.preventDefault();
-  const {x, y, clientX, clientY} = touchPos(e);
-  // Detect double-tap (within 300ms)
+  const t = e.changedTouches[0];
+  const r = cvs.getBoundingClientRect();
+  const x = t.clientX-r.left, y = t.clientY-r.top;
   const now = Date.now();
-  const dt = now - lastTap;
+  if (now - lastTap < 300) { lastTap = 0; return; }
   lastTap = now;
-  if (dt < 300) return; // ignore double-tap, editing is mode-based
-  // Synthesize mousedown
-  cvs.dispatchEvent(new MouseEvent('mousedown', {
-    bubbles: false, clientX, clientY, button: 0
-  }));
+  handleTap(x, y, t.clientX, t.clientY);
 }, { passive: false });
+cvs.addEventListener('touchmove',  e => e.preventDefault(), { passive: false });
+cvs.addEventListener('touchend',   e => e.preventDefault(), { passive: false });
 
-cvs.addEventListener('touchend', e => {
-  e.preventDefault();
-}, { passive: false });
-
-cvs.addEventListener('touchmove', e => {
-  e.preventDefault();
-}, { passive: false });
-
-cvs.addEventListener('dblclick', e => { /* editing handled by Edit mode */ });
-
-// ── Popup editor (nodes + links) ──────────────────────────────────
-let popupTarget = null; // { type: 'node'|'link', obj }
-
+// ── Popup ─────────────────────────────────────────────────────────
 function openPopup(type, obj, cx, cy) {
   popupTarget = { type, obj };
-  const pe = document.getElementById('popup-editor');
-  document.getElementById('pe-title').textContent = type === 'node' ? '✏️ Edit Site' : '✏️ Edit Link';
-  document.getElementById('pe-node-fields').style.display = type === 'node' ? '' : 'none';
-  document.getElementById('pe-link-fields').style.display = type === 'link' ? '' : 'none';
-  if (type === 'node') {
-    document.getElementById('pe-name').value = obj.name;
+  document.getElementById('pe-title').textContent = type==='node' ? '✏️ Edit Site' : '✏️ Edit Link';
+  document.getElementById('pe-node-fields').style.display = type==='node' ? '' : 'none';
+  document.getElementById('pe-link-fields').style.display = type==='link' ? '' : 'none';
+  if (type==='node') {
+    document.getElementById('pe-name').value  = obj.name;
     document.getElementById('pe-color').value = obj.color;
     document.getElementById('pe-shape').value = obj.shape;
   } else {
-    document.getElementById('pe-label').value = obj.label || '';
-    document.getElementById('pe-lcolor').value = obj.color || '#ffffff';
-    document.getElementById('pe-lstyle').value = obj.style || 'solid';
+    document.getElementById('pe-label').value  = obj.label||'';
+    document.getElementById('pe-lcolor').value = obj.color||'#ffffff';
+    document.getElementById('pe-lstyle').value = obj.style||'solid';
   }
+  const pe = document.getElementById('popup-editor');
   pe.style.display = 'block';
-  const pw = 260, ph = 180;
-  pe.style.left = Math.min(cx, window.innerWidth - pw - 8) + 'px';
-  pe.style.top = Math.max(8, Math.min(cy, window.innerHeight - ph - 8)) + 'px';
-  setTimeout(() => {
-    const first = type === 'node'
-      ? document.getElementById('pe-name')
-      : document.getElementById('pe-label');
-    first.focus(); first.select();
-  }, 10);
+  const pw=250, ph=210;
+  pe.style.left = Math.min(cx+8, window.innerWidth-pw-8)+'px';
+  pe.style.top  = Math.max(8, Math.min(cy, window.innerHeight-ph-8))+'px';
+  setTimeout(()=>{ const f=document.getElementById(type==='node'?'pe-name':'pe-label'); f.focus(); f.select(); }, 50);
 }
 
 function savePopup() {
   if (!popupTarget) return;
-  const { type, obj } = popupTarget;
-  if (type === 'node') {
+  const {type, obj} = popupTarget;
+  if (type==='node') {
     const nm = document.getElementById('pe-name').value.trim();
     if (nm) obj.name = nm;
     obj.color = document.getElementById('pe-color').value;
@@ -446,8 +389,7 @@ function savePopup() {
     obj.color = document.getElementById('pe-lcolor').value;
     obj.style = document.getElementById('pe-lstyle').value;
   }
-  closePopup();
-  draw();
+  closePopup(); draw();
 }
 
 function closePopup() {
@@ -455,129 +397,198 @@ function closePopup() {
   document.getElementById('popup-editor').style.display = 'none';
 }
 
-// Enter to save, Escape to cancel
 document.getElementById('popup-editor').addEventListener('keydown', e => {
-  if (e.key === 'Enter') savePopup();
-  if (e.key === 'Escape') closePopup();
+  if (e.key==='Enter') savePopup();
+  if (e.key==='Escape') closePopup();
 });
 
-// Keep old names as aliases so nothing else breaks
-function promptLinkLabel(link, cx, cy) { openPopup('link', link, cx, cy); }
-function saveLinkLabel() { savePopup(); }
-function closeLinkEditor() { closePopup(); }
-
 // ── Draw ──────────────────────────────────────────────────────────
-function draw() {
-  ctx.clearRect(0, 0, cvs.width, cvs.height);
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, cvs.width, cvs.height);
+function blendGrid(hex) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  const bright=(r*299+g*587+b*114)/1000, amt=bright<128?28:-28;
+  return `rgb(${Math.min(255,Math.max(0,r+amt))},${Math.min(255,Math.max(0,g+amt))},${Math.min(255,Math.max(0,b+amt))})`;
+}
 
-  // Grid
-  ctx.strokeStyle = blendGridColor(bgColor);
-  ctx.lineWidth = 1;
-  for (let x = 0; x < cvs.width; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,cvs.height); ctx.stroke(); }
-  for (let y = 0; y < cvs.height; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(cvs.width,y); ctx.stroke(); }
-
-  // Links
+function drawScene(tc, transparent) {
+  if (!transparent) {
+    tc.fillStyle = bgColor; tc.fillRect(0,0,cvs.width,cvs.height);
+    tc.strokeStyle = blendGrid(bgColor); tc.lineWidth=1;
+    for (let x=0;x<cvs.width;x+=40){tc.beginPath();tc.moveTo(x,0);tc.lineTo(x,cvs.height);tc.stroke();}
+    for (let y=0;y<cvs.height;y+=40){tc.beginPath();tc.moveTo(0,y);tc.lineTo(cvs.width,y);tc.stroke();}
+  }
   links.forEach(l => {
-    const a = nodes.find(n => n.id === l.a), b = nodes.find(n => n.id === l.b);
-    if (!a || !b) return;
-    const hot = hoverLink && hoverLink.id === l.id;
-    ctx.beginPath();
-    ctx.strokeStyle = hot ? '#ffff00' : (l.color || '#fff');
-    ctx.lineWidth = hot ? 3 : 2;
-    if (l.style === 'dashed') ctx.setLineDash([10,5]);
-    else if (l.style === 'dotted') ctx.setLineDash([3,5]);
-    else ctx.setLineDash([]);
-    ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-    ctx.setLineDash([]);
-
+    const a=nodes.find(n=>n.id===l.a), b=nodes.find(n=>n.id===l.b);
+    if (!a||!b) return;
+    const hot = !transparent && hoverLink && hoverLink.id===l.id;
+    tc.beginPath();
+    tc.strokeStyle = hot?'#ffff00':(l.color||'#fff');
+    tc.lineWidth = hot?3:2;
+    if (l.style==='dashed') tc.setLineDash([10,5]);
+    else if (l.style==='dotted') tc.setLineDash([3,5]);
+    else tc.setLineDash([]);
+    tc.moveTo(a.x,a.y); tc.lineTo(b.x,b.y); tc.stroke(); tc.setLineDash([]);
     if (l.label) {
-      const mx = (a.x+b.x)/2, my = (a.y+b.y)/2;
-      const ang = Math.atan2(b.y-a.y, b.x-a.x);
-      ctx.save();
-      ctx.translate(mx, my);
-      // Keep text always readable (not upside down)
-      const flip = Math.abs(ang) > Math.PI/2;
-      ctx.rotate(flip ? ang + Math.PI : ang);
-      ctx.font = 'bold 11px Arial';
-      const tw = ctx.measureText(l.label).width;
-      ctx.fillStyle = 'rgba(10,10,30,0.8)';
-      ctx.fillRect(-tw/2-3, -13, tw+6, 15);
-      ctx.fillStyle = hot ? '#ffff00' : '#f0c040';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillText(l.label, 0, 0);
-      ctx.restore();
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      let ang=Math.atan2(b.y-a.y,b.x-a.x);
+      if (Math.abs(ang)>Math.PI/2) ang+=Math.PI;
+      tc.save(); tc.translate(mx,my); tc.rotate(ang);
+      tc.font='bold 11px Arial'; tc.textAlign='center'; tc.textBaseline='alphabetic';
+      const tw=tc.measureText(l.label).width;
+      tc.fillStyle='rgba(10,10,30,0.82)'; tc.fillRect(-tw/2-3,-13,tw+6,15);
+      tc.fillStyle=hot?'#ffff00':'#f0c040'; tc.fillText(l.label,0,0);
+      tc.restore();
     }
   });
-
-  // Connect-start highlight
-  if (connectStart) {
-    ctx.beginPath();
-    ctx.arc(connectStart.x, connectStart.y, 22, 0, Math.PI*2);
-    ctx.strokeStyle = '#e94560';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([4,3]);
-    ctx.stroke();
-    ctx.setLineDash([]);
+  if (!transparent && connectStart) {
+    tc.beginPath(); tc.arc(connectStart.x,connectStart.y,24,0,Math.PI*2);
+    tc.strokeStyle='#e94560'; tc.lineWidth=2; tc.setLineDash([4,3]); tc.stroke(); tc.setLineDash([]);
   }
-
-  // Nodes
   nodes.forEach(n => {
-    const hot = (hoverNode && hoverNode.id === n.id) || (connectStart && connectStart.id === n.id);
-    const selected = moveSelected && moveSelected.id === n.id;
-    const r = 12;
-    ctx.save();
-    ctx.translate(n.x, n.y);
-    ctx.beginPath();
-    if (n.shape === 'circle') {
-      ctx.arc(0, 0, r, 0, Math.PI*2);
-    } else if (n.shape === 'square') {
-      ctx.rect(-r, -r, r*2, r*2);
-    } else if (n.shape === 'diamond') {
-      ctx.moveTo(0, -r*1.4); ctx.lineTo(r*1.1, 0); ctx.lineTo(0, r*1.4); ctx.lineTo(-r*1.1, 0); ctx.closePath();
-    } else if (n.shape === 'house') {
-      ctx.moveTo(-r, r); ctx.lineTo(-r, -2); ctx.lineTo(0, -r-5); ctx.lineTo(r, -2); ctx.lineTo(r, r); ctx.closePath();
-    }
-    if (hot || selected) { ctx.shadowColor = selected ? '#ffff00' : n.color; ctx.shadowBlur = selected ? 24 : 18; }
-    ctx.fillStyle = selected ? '#ffff00' : n.color;
-    ctx.fill();
-    ctx.strokeStyle = hot ? '#fff' : 'rgba(0,0,0,0.6)';
-    ctx.lineWidth = hot ? 2 : 1.5;
-    ctx.stroke();
-    ctx.shadowBlur = 0;
-
-    // Label
-    ctx.font = 'bold 11px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    const tw = ctx.measureText(n.name).width;
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(-tw/2-3, r+3, tw+6, 14);
-    ctx.fillStyle = '#fff';
-    ctx.fillText(n.name, 0, r+4);
-    ctx.restore();
+    const hot = !transparent && hoverNode && hoverNode.id===n.id;
+    const sel = !transparent && moveSelected && moveSelected.id===n.id;
+    const r=13;
+    tc.save(); tc.translate(n.x,n.y);
+    tc.beginPath();
+    if (n.shape==='circle') tc.arc(0,0,r,0,Math.PI*2);
+    else if (n.shape==='square') tc.rect(-r,-r,r*2,r*2);
+    else if (n.shape==='diamond'){tc.moveTo(0,-r*1.4);tc.lineTo(r*1.1,0);tc.lineTo(0,r*1.4);tc.lineTo(-r*1.1,0);tc.closePath();}
+    else if (n.shape==='house'){tc.moveTo(-r,r);tc.lineTo(-r,-2);tc.lineTo(0,-r-5);tc.lineTo(r,-2);tc.lineTo(r,r);tc.closePath();}
+    if (hot||sel){tc.shadowColor=sel?'#ffff00':n.color; tc.shadowBlur=sel?22:16;}
+    tc.fillStyle=sel?'#ffff00':n.color; tc.fill();
+    tc.strokeStyle=(hot||sel)?'#fff':'rgba(0,0,0,0.5)'; tc.lineWidth=(hot||sel)?2:1.5; tc.stroke();
+    tc.shadowBlur=0;
+    tc.font='bold 11px Arial'; tc.textAlign='center'; tc.textBaseline='top';
+    const tw=tc.measureText(n.name).width;
+    tc.fillStyle='rgba(0,0,0,0.72)'; tc.fillRect(-tw/2-3,r+3,tw+6,14);
+    tc.fillStyle='#fff'; tc.fillText(n.name,0,r+4);
+    tc.restore();
   });
 }
 
-// ── Import Sites ──────────────────────────────────────────────────
+function draw() { ctx.clearRect(0,0,cvs.width,cvs.height); drawScene(ctx, false); }
+
+// ── BG ────────────────────────────────────────────────────────────
+function setBg(v) { bgColor=v; draw(); }
+
+// ── Import sites ──────────────────────────────────────────────────
 function toggleImport() {
-  const p = document.getElementById('import-panel');
-  p.classList.toggle('open');
+  document.getElementById('import-panel').classList.toggle('open');
 }
 
 function importSites() {
-  const raw = document.getElementById('site-list-input').value;
+  const raw   = document.getElementById('site-list-input').value;
   const shape = document.getElementById('import-shape').value;
   const color = document.getElementById('import-color').value;
+  const names = raw.split(/[\n,]+/).map(s=>s.trim()).filter(Boolean);
+  if (!names.length) return;
+  const cols=Math.ceil(Math.sqrt(names.length)), colW=120, rowH=90;
+  const startX=cvs.width/2-((cols-1)*colW)/2;
+  const startY=cvs.height/2-(Math.ceil(names.length/cols)-1)*rowH/2;
+  names.forEach((name,i)=>{
+    nodes.push({id:uid(), x:startX+(i%cols)*colW, y:startY+Math.floor(i/cols)*rowH, name, color, shape});
+  });
+  document.getElementById('site-list-input').value='';
+  toggleImport(); draw();
+}
 
-  // Split by newlines or commas, clean up
-  const names = raw.split(/[\n,]+/).map(s => s.trim()).filter(s => s.length > 0);
-  if (names.length === 0) return;
+// ── Auto-Layout ───────────────────────────────────────────────────
+function autoLayout() {
+  if (!nodes.length) return;
+  const W=cvs.width, H=cvs.height, cx=W/2, cy=H/2;
+  const adj={};
+  nodes.forEach(n=>adj[n.id]=[]);
+  links.forEach(l=>{adj[l.a].push(l.b);adj[l.b].push(l.a);});
+  function bfs(sid){
+    const v={[sid]:0},q=[sid];
+    while(q.length){const c=q.shift();for(const nb of adj[c])if(!(nb in v)){v[nb]=v[c]+1;q.push(nb);}}
+    return v;
+  }
+  const allDeg2=nodes.every(n=>adj[n.id].length===2);
+  if (allDeg2&&Object.keys(bfs(nodes[0].id)).length===nodes.length){
+    const r=Math.min(W,H)*0.38;
+    nodes.forEach((n,i)=>{const a=(2*Math.PI*i/nodes.length)-Math.PI/2;n.x=cx+r*Math.cos(a);n.y=cy+r*Math.sin(a);});
+    draw(); return;
+  }
+  const root=nodes.reduce((b,n)=>adj[n.id].length>adj[b.id].length?n:b,nodes[0]);
+  const parent={[root.id]:null},level={[root.id]:0},order=[root.id],q=[root.id];
+  while(q.length){const c=q.shift();for(const nb of adj[c])if(!(nb in parent)){parent[nb]=c;level[nb]=level[c]+1;order.push(nb);q.push(nb);}}
+  const levels={};let maxL=0;
+  order.forEach(id=>{const lv=level[id];if(!levels[lv])levels[lv]=[];levels[lv].push(id);if(lv>maxL)maxL=lv;});
+  const padX=80,padY=80,uW=W-padX*2,uH=H-padY*2,rH=maxL>0?uH/maxL:0;
+  for(let lv=0;lv<=maxL;lv++){
+    const row=levels[lv]||[],count=row.length;
+    row.forEach((id,i)=>{const n=nodes.find(nd=>nd.id===id);n.x=count===1?cx:padX+(uW/(count-1))*i;n.y=padY+lv*rH;});
+  }
+  const pos2=new Set(order);
+  nodes.filter(n=>!pos2.has(n.id)).forEach((n,i)=>{n.x=padX+i*100;n.y=H-50;});
+  draw();
+}
 
-  // Grid layout for new nodes
-  const cols = Math.ceil(Math.sqrt(names.length));
-  const colW = 120, rowH = 90;
-  const W = cvs.width, H = cvs.height;
-  const totalW
+// ── Export PNG ────────────────────────────────────────────────────
+function exportPNG() {
+  const useBg = confirm('Include background?\nOK = yes  |  Cancel = transparent');
+  if (useBg) {
+    triggerDownload(cvs.toDataURL('image/png'), 'stickmap.png');
+  } else {
+    const tmp=document.createElement('canvas');
+    tmp.width=cvs.width; tmp.height=cvs.height;
+    drawScene(tmp.getContext('2d'), true);
+    triggerDownload(tmp.toDataURL('image/png'), 'stickmap.png');
+  }
+}
+
+function triggerDownload(dataUrl, filename) {
+  const a=document.createElement('a');
+  a.href=dataUrl; a.download=filename; a.click();
+}
+
+// ── Export / Import JSON ──────────────────────────────────────────
+async function exportJSON() {
+  const blob = new Blob([JSON.stringify({nodes,links,idCounter,bgColor},null,2)],{type:'application/json'});
+  if (window.showSaveFilePicker) {
+    try {
+      const fh=await window.showSaveFilePicker({suggestedName:'stickmap.json',
+        types:[{description:'Stick Map',accept:{'application/json':['.json']}}]});
+      const w=await fh.createWritable(); await w.write(blob); await w.close(); return;
+    } catch(e){ if(e.name==='AbortError') return; }
+  }
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='stickmap.json'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+
+async function importJSON() {
+  if (window.showOpenFilePicker) {
+    try {
+      const [fh]=await window.showOpenFilePicker({
+        types:[{description:'Stick Map',accept:{'application/json':['.json']}}]});
+      applyMap(await(await fh.getFile()).text()); return;
+    } catch(e){ if(e.name==='AbortError') return; }
+  }
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='.json,application/json';
+  inp.onchange=e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=ev=>applyMap(ev.target.result); r.readAsText(f);
+  };
+  inp.click();
+}
+
+function applyMap(text) {
+  try {
+    const d=JSON.parse(text);
+    nodes=d.nodes||[]; links=d.links||[];
+    idCounter=d.idCounter||(nodes.length+links.length+1);
+    if(d.bgColor){bgColor=d.bgColor;document.getElementById('bg-color').value=bgColor;}
+    draw();
+  } catch { alert('Invalid map file.'); }
+}
+
+// ── Clear ─────────────────────────────────────────────────────────
+function clearAll() {
+  if (!confirm('Clear everything?')) return;
+  nodes=[]; links=[]; connectStart=null; moveSelected=null; draw();
+}
+</script>
+</body>
+</html>
