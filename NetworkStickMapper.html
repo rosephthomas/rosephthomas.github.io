@@ -110,7 +110,18 @@ canvas { display: block; touch-action: none; }
   <button onclick="importJSON()">📂 Load</button>
   <button onclick="exportPNG()">🖼 PNG</button>
   <div class="tb-sep"></div>
-  <button onclick="clearAll()" style="background:#5a1a1a;border-color:#8a2020;">🗑 Clear</button>
+      <button onclick="showHelp()">❓ Help</button>
+    <button onclick="clearAll()" style="background:#5a1a1a;border-color:#8a2020;">🗑 Clear</button>
+    <div class="tb-sep"></div>
+    <div class="tb-group">
+      <label>Theme:</label>
+      <select id="theme-select" onchange="applyTheme(this.value)" style="min-width:110px;">
+        <option value="dark">🌙 Dark</option>
+        <option value="light">📄 Blueprint</option>
+        <option value="inverted">⬜ Inverted</option>
+        <option value="minesweeper">💣 Minesweeper</option>
+      </select>
+    </div>
 </div>
 
 <!-- Row 2: Formatting controls -->
@@ -153,7 +164,7 @@ canvas { display: block; touch-action: none; }
     <button id="btn-delete" onclick="setMode('delete')">✕ Delete</button>
 
     <div class="section-title" style="margin-top:6px;">Tools</div>
-    <button onclick="toggleImport()">📋 Bulk Add Sites</button>
+    <button onclick="toggleImport()" id="btn-bulk">📋 Bulk Add</button>
     <button onclick="autoLayout()">⬡ Auto-Layout</button>
 
     <div id="hint-box">Tap canvas to place a site.</div>
@@ -186,7 +197,7 @@ canvas { display: block; touch-action: none; }
   </div>
 </div>
 
-<!-- Popup editor -->
+
 <div id="popup-editor">
   <h4 id="pe-title">Edit</h4>
   <div id="pe-node-fields">
@@ -232,9 +243,100 @@ let bgColor = '#1a1a2e';
 let idCounter = 1;
 function uid() { return idCounter++; }
 
+// ── Themes ────────────────────────────────────────────────────────
+const THEMES = {
+  dark: {
+    bg: '#1a1a2e',
+    ui: '#16213e', uiBorder: '#0f3460', uiText: '#eee',
+    btn: '#0f3460', btnBorder: '#1a4a8a', btnActive: '#e94560',
+    input: '#0f3460', inputBorder: '#1a4a8a', inputText: '#eee',
+    label: '#aaa', barLabel: '#666', hint: '#888',
+    nodeDefault: '#00d4ff', linkDefault: '#ffffff',
+    sectionTitle: '#555',
+  },
+  light: {
+    bg: '#ffffff',
+    ui: '#f0f0f0', uiBorder: '#cccccc', uiText: '#111111',
+    btn: '#e8e8e8', btnBorder: '#aaaaaa', btnActive: '#111111',
+    input: '#ffffff', inputBorder: '#aaaaaa', inputText: '#111111',
+    label: '#444', barLabel: '#777', hint: '#555',
+    nodeDefault: '#111111', linkDefault: '#111111',
+    sectionTitle: '#aaa',
+  },
+  minesweeper: {
+    bg: '#bdbdbd',
+    ui: '#c0c0c0', uiBorder: '#808080', uiText: '#000',
+    btn: '#c0c0c0', btnBorder: '#808080', btnActive: '#000080',
+    input: '#ffffff', inputBorder: '#808080', inputText: '#000',
+    label: '#000', barLabel: '#444', hint: '#222',
+    nodeDefault: '#000080', linkDefault: '#000000',
+    sectionTitle: '#555',
+  }
+};
+
+let currentTheme = 'minesweeper';
+
+function applyTheme(name) {
+  currentTheme = name;
+  const t = THEMES[name];
+  const r = document.documentElement.style;
+  r.setProperty('--bg',           t.bg);
+  r.setProperty('--ui',           t.ui);
+  r.setProperty('--ui-border',    t.uiBorder);
+  r.setProperty('--ui-text',      t.uiText);
+  r.setProperty('--btn',          t.btn);
+  r.setProperty('--btn-border',   t.btnBorder);
+  r.setProperty('--btn-active',   t.btnActive);
+  r.setProperty('--input',        t.input);
+  r.setProperty('--input-border', t.inputBorder);
+  r.setProperty('--input-text',   t.inputText);
+  r.setProperty('--label',        t.label);
+  r.setProperty('--bar-label',    t.barLabel);
+  r.setProperty('--hint',         t.hint);
+  r.setProperty('--section-title',t.sectionTitle);
+
+  bgColor = t.bg;
+  document.getElementById('bg-color').value = bgColor;
+
+  const isMine  = name === 'minesweeper';
+  const isLight = name === 'light';
+
+  document.querySelectorAll('button').forEach(b => {
+    if (isMine) {
+      b.style.boxShadow     = 'inset -2px -2px #000, inset 2px 2px #fff, inset -4px -4px #808080, inset 4px 4px #dfdfdf';
+      b.style.borderRadius  = '0';
+      b.style.fontFamily    = '"Courier New", monospace';
+      b.style.fontWeight    = 'bold';
+      b.style.letterSpacing = '0.5px';
+    } else {
+      b.style.boxShadow     = '';
+      b.style.borderRadius  = isLight ? '2px' : '';
+      b.style.fontFamily    = '';
+      b.style.fontWeight    = '';
+      b.style.letterSpacing = '';
+    }
+  });
+
+  document.querySelectorAll('input[type=text], select, textarea').forEach(el => {
+    if (isMine) {
+      el.style.boxShadow    = 'inset 2px 2px #808080, inset -2px -2px #dfdfdf';
+      el.style.borderRadius = '0';
+      el.style.fontFamily   = '"Courier New", monospace';
+    } else {
+      el.style.boxShadow    = '';
+      el.style.borderRadius = isLight ? '2px' : '';
+      el.style.fontFamily   = '';
+    }
+  });
+
+  document.body.style.fontFamily = isMine ? '"Courier New", monospace' : 'Arial, sans-serif';
+  draw();
+}
+
 // ── Resize ────────────────────────────────────────────────────────
 function resize() { cvs.width = wrap.clientWidth; cvs.height = wrap.clientHeight; draw(); }
 window.addEventListener('resize', resize);
+applyTheme('minesweeper');
 resize();
 
 // ── Mode ──────────────────────────────────────────────────────────
@@ -442,18 +544,31 @@ function blendGrid(hex) {
 }
 
 function drawScene(tc, transparent) {
+  const t = THEMES[currentTheme];
+  const W = cvs.width, H = cvs.height;
+
   if (!transparent) {
-    tc.fillStyle = bgColor; tc.fillRect(0,0,cvs.width,cvs.height);
+    tc.fillStyle = bgColor; tc.fillRect(0,0,W,H);
+    // Grid
     tc.strokeStyle = blendGrid(bgColor); tc.lineWidth=1;
-    for (let x=0;x<cvs.width;x+=40){tc.beginPath();tc.moveTo(x,0);tc.lineTo(x,cvs.height);tc.stroke();}
-    for (let y=0;y<cvs.height;y+=40){tc.beginPath();tc.moveTo(0,y);tc.lineTo(cvs.width,y);tc.stroke();}
+    // Minesweeper: no grid, just flat
+    if (currentTheme !== 'minesweeper') {
+      for (let x=0;x<W;x+=40){tc.beginPath();tc.moveTo(x,0);tc.lineTo(x,H);tc.stroke();}
+      for (let y=0;y<H;y+=40){tc.beginPath();tc.moveTo(0,y);tc.lineTo(W,y);tc.stroke();}
+    }
+    // Blueprint: dot grid instead of lines
+    if (currentTheme === 'light') {
+      tc.fillStyle = 'rgba(100,80,50,0.25)';
+      for (let x=0;x<W;x+=40) for (let y=0;y<H;y+=40) { tc.beginPath();tc.arc(x,y,1.2,0,Math.PI*2);tc.fill(); }
+    }
   }
+
   links.forEach(l => {
     const a=nodes.find(n=>n.id===l.a), b=nodes.find(n=>n.id===l.b);
     if (!a||!b) return;
     const hot = !transparent && hoverLink && hoverLink.id===l.id;
     tc.beginPath();
-    tc.strokeStyle = hot?'#ffff00':(l.color||'#fff');
+    tc.strokeStyle = hot ? (currentTheme==='light'||currentTheme==='inverted'||currentTheme==='minesweeper' ? '#cc0000' : '#ffff00') : (l.color||t.linkDefault);
     tc.lineWidth = hot?3:2;
     if (l.style==='dashed') tc.setLineDash([10,5]);
     else if (l.style==='dotted') tc.setLineDash([3,5]);
@@ -464,17 +579,28 @@ function drawScene(tc, transparent) {
       let ang=Math.atan2(b.y-a.y,b.x-a.x);
       if (Math.abs(ang)>Math.PI/2) ang+=Math.PI;
       tc.save(); tc.translate(mx,my); tc.rotate(ang);
-      tc.font='bold 11px Arial'; tc.textAlign='center'; tc.textBaseline='alphabetic';
+      tc.font = currentTheme==='minesweeper' ? 'bold 11px "Courier New"' : 'bold 11px Arial';
+      tc.textAlign='center'; tc.textBaseline='alphabetic';
       const tw=tc.measureText(l.label).width;
-      tc.fillStyle='rgba(10,10,30,0.82)'; tc.fillRect(-tw/2-3,-13,tw+6,15);
-      tc.fillStyle=hot?'#ffff00':'#f0c040'; tc.fillText(l.label,0,0);
+      const lblBg = currentTheme==='light' ? 'rgba(245,240,232,0.9)'
+                  : currentTheme==='inverted' ? 'rgba(229,229,209,0.9)'
+                  : currentTheme==='minesweeper' ? 'rgba(192,192,192,0.95)'
+                  : 'rgba(10,10,30,0.82)';
+      const lblFg = currentTheme==='light' ? '#3a2800'
+                  : currentTheme==='inverted' ? '#1b2a00'
+                  : currentTheme==='minesweeper' ? '#000080'
+                  : (hot?'#ffff00':'#f0c040');
+      tc.fillStyle=lblBg; tc.fillRect(-tw/2-3,-13,tw+6,15);
+      tc.fillStyle=lblFg; tc.fillText(l.label,0,0);
       tc.restore();
     }
   });
+
   if (!transparent && connectStart) {
     tc.beginPath(); tc.arc(connectStart.x,connectStart.y,24,0,Math.PI*2);
-    tc.strokeStyle='#e94560'; tc.lineWidth=2; tc.setLineDash([4,3]); tc.stroke(); tc.setLineDash([]);
+    tc.strokeStyle=t.btnActive; tc.lineWidth=2; tc.setLineDash([4,3]); tc.stroke(); tc.setLineDash([]);
   }
+
   nodes.forEach(n => {
     const hot = !transparent && hoverNode && hoverNode.id===n.id;
     const sel = !transparent && moveSelected && moveSelected.id===n.id;
@@ -485,14 +611,34 @@ function drawScene(tc, transparent) {
     else if (n.shape==='square') tc.rect(-r,-r,r*2,r*2);
     else if (n.shape==='diamond'){tc.moveTo(0,-r*1.4);tc.lineTo(r*1.1,0);tc.lineTo(0,r*1.4);tc.lineTo(-r*1.1,0);tc.closePath();}
     else if (n.shape==='house'){tc.moveTo(-r,r);tc.lineTo(-r,-2);tc.lineTo(0,-r-5);tc.lineTo(r,-2);tc.lineTo(r,r);tc.closePath();}
-    if (hot||sel){tc.shadowColor=sel?'#ffff00':n.color; tc.shadowBlur=sel?22:16;}
-    tc.fillStyle=sel?'#ffff00':n.color; tc.fill();
-    tc.strokeStyle=(hot||sel)?'#fff':'rgba(0,0,0,0.5)'; tc.lineWidth=(hot||sel)?2:1.5; tc.stroke();
-    tc.shadowBlur=0;
-    tc.font='bold 11px Arial'; tc.textAlign='center'; tc.textBaseline='top';
+
+    // Minesweeper: raised button effect on nodes
+    if (currentTheme === 'minesweeper') {
+      tc.fillStyle = sel ? '#ffff00' : n.color;
+      tc.fill();
+      tc.strokeStyle = '#fff'; tc.lineWidth = 2; tc.stroke();
+      tc.beginPath();
+      if (n.shape==='circle') tc.arc(0,0,r,0,Math.PI*2);
+      tc.strokeStyle = '#808080'; tc.lineWidth=1; tc.stroke();
+    } else {
+      if (hot||sel){tc.shadowColor=sel?'#ffff00':n.color; tc.shadowBlur=sel?22:16;}
+      tc.fillStyle=sel?'#ffff00':n.color; tc.fill();
+      tc.strokeStyle=(hot||sel)?'#fff':(currentTheme==='light'||currentTheme==='inverted'?'rgba(0,0,0,0.4)':'rgba(0,0,0,0.5)');
+      tc.lineWidth=(hot||sel)?2:1.5; tc.stroke();
+      tc.shadowBlur=0;
+    }
+
+    const labelFont = currentTheme==='minesweeper' ? 'bold 10px "Courier New"' : 'bold 11px Arial';
+    tc.font=labelFont; tc.textAlign='center'; tc.textBaseline='top';
     const tw=tc.measureText(n.name).width;
-    tc.fillStyle='rgba(0,0,0,0.72)'; tc.fillRect(-tw/2-3,r+3,tw+6,14);
-    tc.fillStyle='#fff'; tc.fillText(n.name,0,r+4);
+    const lbg = currentTheme==='light' ? 'rgba(245,240,232,0.85)'
+              : currentTheme==='inverted' ? 'rgba(229,229,209,0.85)'
+              : currentTheme==='minesweeper' ? 'rgba(192,192,192,0.9)'
+              : 'rgba(0,0,0,0.72)';
+    const lfg = (currentTheme==='light'||currentTheme==='inverted') ? '#111'
+              : currentTheme==='minesweeper' ? '#000080' : '#fff';
+    tc.fillStyle=lbg; tc.fillRect(-tw/2-3,r+3,tw+6,14);
+    tc.fillStyle=lfg; tc.fillText(n.name,0,r+4);
     tc.restore();
   });
 }
@@ -584,6 +730,129 @@ function autoLayout() {
   const pos2=new Set(order);
   nodes.filter(n=>!pos2.has(n.id)).forEach((n,i)=>{n.x=padX+i*100;n.y=H-50;});
   draw();
+}
+
+function showHelp() {
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fiber Stick Map — Help</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #1a1a2e; color: #ccc;
+    padding: 24px 20px 48px; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+  h1 { color: #00d4ff; font-size: 18px; margin-bottom: 6px; }
+  .subtitle { font-size: 12px; color: #666; margin-bottom: 20px; }
+  h2 { color: #f0c040; font-size: 12px; text-transform: uppercase;
+    letter-spacing: 0.7px; margin: 22px 0 8px;
+    border-bottom: 1px solid #0f3460; padding-bottom: 5px; }
+  p { font-size: 13px; margin-bottom: 8px; }
+  ul { padding-left: 18px; margin-bottom: 8px; }
+  li { font-size: 13px; margin-bottom: 5px; }
+  b { color: #eee; }
+  code { background: #0f3460; padding: 1px 6px; border-radius: 3px;
+    font-family: monospace; font-size: 12px; color: #f0c040; }
+  .example { background: #0d1a33; border: 1px solid #0f3460; border-radius: 6px;
+    padding: 10px 14px; margin: 10px 0; font-family: monospace; font-size: 12px;
+    color: #f0c040; line-height: 2; }
+  .tip { background: #0d1a33; border-left: 3px solid #00d4ff;
+    padding: 8px 12px; margin: 8px 0; font-size: 12px; color: #aaa; border-radius: 0 4px 4px 0; }
+  .close-wrap { position: fixed; bottom: 0; left: 0; right: 0;
+    background: #16213e; border-top: 1px solid #0f3460; padding: 10px 20px; }
+  .close-btn { display: block; width: 100%; max-width: 600px; margin: 0 auto;
+    background: #0f3460; color: #eee; border: 1px solid #1a4a8a;
+    padding: 10px; border-radius: 6px; font-size: 14px; cursor: pointer;
+    touch-action: manipulation; }
+  .close-btn:active { background: #1a5299; }
+</style>
+</head>
+<body>
+  <h1>📡 Fiber Stick Map</h1>
+  <p class="subtitle">Quick reference guide</p>
+
+  <h2>Modes — Left Sidebar</h2>
+  <ul>
+    <li><b>＋ Add Site</b> — Tap or click the canvas to place a new node. Set the name, color, and shape in the Format bar before placing.</li>
+    <li><b>⟷ Connect</b> — Tap one site, then tap another to draw a link between them. A label editor opens immediately — hit Enter to save or cancel to skip.</li>
+    <li><b>✏️ Edit</b> — Tap any site or link to open its properties. Edit name, color, shape, label, or line style.</li>
+    <li><b>✥ Move</b> — Drag any site to a new position. Works with mouse drag or touch drag.</li>
+    <li><b>✕ Delete</b> — Tap any site or link to remove it. Deleting a site also removes all its connected links.</li>
+  </ul>
+
+  <h2>Format Bar</h2>
+  <ul>
+    <li><b>Site Name / Color / Shape</b> — Applied to each new site placed in Add mode.</li>
+    <li><b>Link Color / Style</b> — Applied to each new link drawn in Connect mode. Styles: Solid, Dashed, Dotted.</li>
+    <li><b>BG</b> — Background color of the canvas. Updates live.</li>
+  </ul>
+
+  <h2>Node Shapes</h2>
+  <ul>
+    <li><b>Circle</b> — General node or splice point</li>
+    <li><b>Square</b> — Terminal or distribution point</li>
+    <li><b>Diamond</b> — Splice enclosure or passive node</li>
+    <li><b>Hub</b> — Headend, hub, or central office</li>
+  </ul>
+
+  <h2>Bulk Add Sites</h2>
+  <p>Use the Bulk Add panel to quickly define a network. The syntax is simple:</p>
+  <ul>
+    <li>Sites on the same line separated by <code>,</code> are placed and <b>auto-connected</b> left to right.</li>
+    <li>A site on its own line is placed <b>floating</b> with no connections.</li>
+    <li>If a site name <b>already exists</b> on the canvas it is reused — useful for branching off existing nodes.</li>
+  </ul>
+  <div class="example">
+    HUB-1, Node-A, Node-B, Node-C<br>
+    Term-1<br>
+    Node-C, Term-2, Term-3
+  </div>
+  <p>Result: HUB-1 → Node-A → Node-B → Node-C as a chain, Term-1 floating, and Node-C extended to Term-2 → Term-3.</p>
+  <div class="tip">After Bulk Add, tap <b>Auto-Layout</b> to instantly tidy the map into a clean tree.</div>
+
+  <h2>Auto-Layout</h2>
+  <ul>
+    <li><b>Tree / Branch</b> — Detects the root node and arranges everything into horizontal tiers top to bottom.</li>
+    <li><b>Ring</b> — If every node has exactly 2 connections, arranges them evenly in a circle.</li>
+    <li>Unconnected nodes are placed along the bottom edge. Use Move to reposition them.</li>
+  </ul>
+
+  <h2>File Controls</h2>
+  <ul>
+    <li><b>💾 Export</b> — Saves your map as a <code>.json</code> file. Chrome desktop shows a Save As dialog. Android saves to Downloads.</li>
+    <li><b>📂 Load</b> — Opens a file browser to load a previously saved <code>.json</code> map.</li>
+    <li><b>🖼 PNG</b> — Exports the canvas as a PNG image. Choose to include the background or export transparent.</li>
+    <li><b>🗑 Clear</b> — Wipes the canvas after confirmation.</li>
+  </ul>
+
+  <h2>Tips</h2>
+  <ul>
+    <li>Link labels can hold anything — footage, fiber count, cable ID, route name.</li>
+    <li>You can run multiple Bulk Adds in stages to build complex networks incrementally.</li>
+    <li>On desktop, hover over nodes and links to highlight them before clicking.</li>
+    <li>The <code>.json</code> export preserves everything including background color — use it to save and resume work.</li>
+  </ul>
+
+  <div class="close-wrap">
+    <button class="close-btn" onclick="window.close()">✕ Close Help</button>
+  </div>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const w = window.open(url, '_blank', 'width=640,height=700');
+  if (!w) {
+    // Fallback if popups blocked: inject into an iframe overlay
+    const ov = document.createElement('div');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:300;background:#1a1a2e;overflow:auto;';
+    ov.innerHTML = html;
+    // Replace close button to remove overlay instead of closing window
+    document.body.appendChild(ov);
+    const btn = ov.querySelector('.close-btn');
+    if (btn) btn.onclick = () => document.body.removeChild(ov);
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 }
 
 // ── Export PNG ────────────────────────────────────────────────────
