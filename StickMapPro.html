@@ -145,8 +145,7 @@ canvas { display:block; touch-action:none; }
         <option value="house">Hub</option>
       </select>
     </div>
-    <div class="pe-row"><label>Lat</label><input type="text" id="pe-lat" placeholder="35.12345"/></div>
-    <div class="pe-row"><label>Lon</label><input type="text" id="pe-lon" placeholder="-80.12345"/></div>
+    <div class="pe-row"><label>Coords</label><input type="text" id="pe-coords" placeholder="35.12345, -80.12345"/></div>
   </div>
   <div id="pe-link-fields">
     <div class="pe-row"><label>Label</label><input type="text" id="pe-label" placeholder="e.g. 1200ft / 12F"/></div>
@@ -361,8 +360,8 @@ function openPopup(type, obj, cx, cy) {
     document.getElementById('pe-name').value  = obj.name;
     document.getElementById('pe-color').value = obj.color;
     document.getElementById('pe-shape').value = obj.shape;
-    document.getElementById('pe-lat').value   = obj.lat !== undefined ? obj.lat : '';
-    document.getElementById('pe-lon').value   = obj.lon !== undefined ? obj.lon : '';
+    var coords = (obj.lat !== undefined && obj.lon !== undefined) ? obj.lat + ', ' + obj.lon : '';
+    document.getElementById('pe-coords').value = coords;
   } else {
     document.getElementById('pe-label').value  = obj.label || '';
     document.getElementById('pe-lcolor').value = obj.color || '#8000ff';
@@ -382,9 +381,11 @@ function savePopup() {
     var nm = document.getElementById('pe-name').value.trim(); if (nm) obj.name = nm;
     obj.color = document.getElementById('pe-color').value;
     obj.shape = document.getElementById('pe-shape').value;
-    var lv = parseFloat(document.getElementById('pe-lat').value);
-    var lov = parseFloat(document.getElementById('pe-lon').value);
-    obj.lat = isNaN(lv) ? undefined : lv; obj.lon = isNaN(lov) ? undefined : lov;
+    var parts = document.getElementById('pe-coords').value.split(',');
+    var lv = parts.length >= 2 ? parseFloat(parts[0].trim()) : NaN;
+    var lov = parts.length >= 2 ? parseFloat(parts[1].trim()) : NaN;
+    obj.lat = isNaN(lv) ? undefined : lv;
+    obj.lon = isNaN(lov) ? undefined : lov;
   } else {
     obj.label = document.getElementById('pe-label').value.trim();
     obj.color = document.getElementById('pe-lcolor').value;
