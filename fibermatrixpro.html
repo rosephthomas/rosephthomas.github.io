@@ -7,13 +7,10 @@
     <style>
         /* Theme Variables */
         :root {
-            --bg: #f4f4f9; --card: #ffffff; --text: #1a1d20; --border: #dddddd;
-            --primary: #007bff; --success: #28a745; --danger: #dc3545; --dark: #1a1d20; --brand-gold: #ffc107;
-            --input-bg: #ffffff; --input-text: #1a1d20; --row-bg: #f8f9fa;
-        }
-        [data-theme="dark"] {
-            --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --border: #333333;
-            --input-bg: #2d2d2d; --input-text: #ffffff; --row-bg: #252525;
+            --bg: #ffffff; --card: #f8f8f8; --text: #1a1a1a; --border: #e0e0e0;
+            --primary: #333333; --success: #333333; --danger: #d32f2f; --dark: #1a1a1a; --brand-gold: #000000;
+            --input-bg: #ffffff; --input-text: #1a1a1a; --row-bg: #f0f0f0;
+            --btn-primary: #333333; --btn-secondary: #666666; --btn-tertiary: #999999;
         }
 
         body { font-family: -apple-system, sans-serif; padding: 0; background: var(--bg); color: var(--text); margin: 0; font-size: 14px; transition: background 0.3s; }
@@ -21,27 +18,32 @@
         /* Header & Theme Toggle */
         header { 
             background: var(--dark); color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 3px solid var(--brand-gold); box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            border-bottom: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; text-transform: uppercase; }
-        header h1 span { color: var(--brand-gold); font-size: 10px; }
-        #theme-btn, #help-btn { background: none; border: 1px solid #555; color: white; padding: 5px 10px; border-radius: 20px; font-size: 18px; min-height: auto; width: auto; cursor: pointer; }
-        .header-status { font-size: 11px; color: #aaa; margin-left: 10px; }
+        header h1 span { color: #cccccc; font-size: 10px; }
+        [data-theme="dark"] header h1 span { color: #888888; }
+        #theme-btn, #help-btn { background: none; border: 1px solid #666; color: white; padding: 5px 10px; border-radius: 20px; font-size: 18px; min-height: auto; width: auto; cursor: pointer; }
 
         /* Controls */
         .app-container { padding: 10px; }
         .controls { position: sticky; top: 0; background: var(--bg); padding: 10px 0; border-bottom: 1px solid var(--border); z-index: 100; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        button { min-height: 48px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 14px; }
-        .btn-main { grid-column: span 2; background: var(--primary); color: white; font-size: 16px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { min-height: 48px; border-radius: 6px; border: 1px solid #999; cursor: pointer; font-weight: 600; font-size: 14px; background: white; color: #000000; }
+        .btn-main { grid-column: span 2; background: #333333; color: white; border: none; font-size: 16px; }
         
         /* Location Cards */
         .loc-card { background: var(--card); margin: 15px 0; padding: 15px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid var(--border); }
         .loc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px; }
         .loc-info { flex: 1; display: flex; gap: 8px; align-items: flex-start; }
         .loc-details { flex: 1; }
-        .loc-edit-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; }
-        .loc-cable-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; }
-        .loc-add-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .loc-edit-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: white; color: #000000; border: 1px solid #999; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+        .loc-cable-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: white; color: #000000; border: 1px solid #999; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+        .loc-add-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: #333333; color: white; border: none; border-radius: 6px; cursor: pointer; }
+        .loc-collapse-btn { min-height: 30px; padding: 0 8px; font-size: 14px; background: white; color: #000000; border: 1px solid #999; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+
+        /* Splices Container */
+        .splices-container { display: none; }
+        .splices-container.expanded { display: block; }
         
         /* Splice Rows */
         .splice-row { background: var(--row-bg); margin-top: 10px; padding: 12px; border-radius: 8px; border: 1px solid var(--border); position: relative; }
@@ -53,13 +55,14 @@
         .swatch-box { text-align: center; }
         .swatch-label { font-size: 9px; font-weight: bold; color: #888; display: block; margin-bottom: 2px; }
         .swatch { width: 28px; height: 28px; border: 2px solid #000; border-radius: 4px; }
-        .stripe { background-image: linear-gradient(45deg, transparent 40%, #fff 40%, #fff 60%, transparent 60%) !important; }
+        .stripe { background-image: linear-gradient(45deg, transparent 40%, #000 40%, #000 60%, transparent 60%) !important; }
+        .stripe-white { background-image: linear-gradient(45deg, transparent 40%, #fff 40%, #fff 60%, transparent 60%) !important; }
 
         /* Modal */
         .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 200; overflow-y: auto; padding: 15px; }
         .modal.open { display: block; }
         .modal-content { background: var(--card); padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; color: var(--text); }
-        .side-bar { background: var(--dark); color: white; padding: 8px; text-align: center; margin: 15px 0 10px; border-radius: 6px; font-weight: bold; }
+        .side-bar { background: var(--row-bg); color: var(--text); padding: 8px; text-align: center; margin: 15px 0 10px; border-radius: 6px; font-weight: bold; border: 1px solid var(--border); }
         input, select, textarea { background: var(--input-bg); color: var(--input-text); padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; width: 100%; box-sizing: border-box; margin-top: 5px; }
         input, select { height: 44px; }
         textarea { height: 100px; padding: 10px; font-family: monospace; }
@@ -130,10 +133,10 @@
         }
 
         /* Cable List in Modal */
-        .cable-list { background: var(--row-bg); padding: 10px; border-radius: 6px; margin-top: 10px; max-height: 150px; overflow-y: auto; }
+        .cable-list { background: var(--row-bg); padding: 10px; border-radius: 6px; margin-top: 10px; max-height: 150px; overflow-y: auto; border: 1px solid var(--border); }
         .cable-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; }
-        .cable-item-name { font-weight: bold; font-size: 13px; }
-        .cable-item-delete { background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; }
+        .cable-item-name { font-weight: bold; font-size: 13px; color: var(--text); }
+        .cable-item-delete { background: #d32f2f; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; }
 
         /* Help Styles */
         .help-content h2 { color: var(--primary); margin-top: 0; margin-bottom: 10px; font-size: 18px; }
@@ -152,16 +155,18 @@
     <div style="display: flex; gap: 8px; align-items: center;">
         <span class="header-status" id="autosave-status"></span>
         <button id="help-btn" onclick="openHelp()">❓</button>
-        <button id="theme-btn" onclick="toggleTheme()">🌓</button>
     </div>
 </header>
 
 <div class="app-container">
     <div class="controls">
         <button class="btn-main" onclick="getLocation()">📍 Record New Location</button>
-        <button style="background: var(--success); color: white;" onclick="saveToFile()">💾 Save</button>
-        <button style="background: #777; color: white;" onclick="document.getElementById('loadInput').click()">📂 Load</button>
-        <button style="background: var(--dark); color: white; grid-column: span 2;" onclick="exportAllCSVsAsZip()">📊 Export Excel CSVs</button>
+        <input type="text" id="technician-input" placeholder="Technician Name" style="grid-column: span 1; height: 44px; margin-top: 5px;">
+        <input type="text" id="project-input" placeholder="Project Name" style="grid-column: span 1; height: 44px; margin-top: 5px;">
+        <button style="background: white; color: var(--text); border: 1px solid #ccc;" onclick="saveToFile()">💾 Save</button>
+        <button style="background: white; color: var(--text); border: 1px solid #ccc;" onclick="document.getElementById('loadInput').click()">📂 Load</button>
+        <button style="background: var(--btn-primary); color: white; border: none; grid-column: span 2;" onclick="exportAllCSVsAsZip()">📊 Export Excel CSVs</button>
+        <button style="background: white; color: var(--text); border: 1px solid #ccc; grid-column: span 2;" onclick="toggleAllSplices()" id="global-toggle-btn">⬇️ Collapse All</button>
         <input type="text" id="search-input" placeholder="Search locations..." style="grid-column: span 2; height: 44px; margin-top: 5px;" onkeyup="updateUI()">
         <input type="file" id="loadInput" style="display:none" accept=".json" onchange="loadFromFile(event)">
     </div>
@@ -215,7 +220,7 @@
             <p style="font-size:12px;font-family:monospace;background:var(--row-bg);padding:8px;border-radius:4px;">48ct East, node tail, 8ch DMX<br/>or<br/>48ct East<br/>node tail<br/>8ch DMX</p>
         </div>
 
-        <button onclick="closeHelp()" style="background: var(--danger); color: white; width: 100%; margin-top: 20px;">Close Help</button>
+        <button onclick="closeHelp()" style="background: white; color: var(--text); border: 1px solid #ccc; width: 100%; margin-top: 20px;">Close Help</button>
     </div>
 </div>
 
@@ -230,8 +235,8 @@
         <div class="side-bar" style="margin-top:15px;">CURRENT INVENTORY</div>
         <div class="cable-list" id="cable-list-display"></div>
         
-        <button onclick="addCablesToLocation()" style="background: var(--success); color: white; width: 100%; margin-top: 15px;">Add Items</button>
-        <button onclick="closeCableModal()" style="background: var(--danger); color: white; width: 100%; margin-top: 8px;">Done</button>
+        <button onclick="addCablesToLocation()" style="background: var(--btn-primary); color: white; border: none; width: 100%; margin-top: 15px;">Add Items</button>
+        <button onclick="closeCableModal()" style="background: white; color: var(--text); border: 1px solid #ccc; width: 100%; margin-top: 8px;">Done</button>
     </div>
 </div>
 
@@ -252,8 +257,8 @@
         <div class="side-bar">NOTES</div>
         <input type="text" id="s_notes" placeholder="e.g. Feeds Site C">
 
-        <button onclick="commitSplice()" style="background: var(--success); color: white; width: 100%; margin-top: 15px;">Confirm Splice</button>
-        <button onclick="closeModal()" style="background: var(--danger); color: white; width: 100%; margin-top: 8px;">Cancel</button>
+        <button onclick="commitSplice()" style="background: var(--btn-primary); color: white; border: none; width: 100%; margin-top: 15px;">Confirm Splice</button>
+        <button onclick="closeModal()" style="background: white; color: var(--text); border: 1px solid #ccc; width: 100%; margin-top: 8px;">Cancel</button>
     </div>
 </div>
 
@@ -266,8 +271,8 @@
         <input type="text" id="edit-lat" placeholder="Latitude (e.g., 43.12345)">
         <input type="text" id="edit-lon" placeholder="Longitude (e.g., -89.12345)">
 
-        <button onclick="commitEdit()" style="background: var(--success); color: white; width: 100%; margin-top: 15px;">Save Changes</button>
-        <button onclick="closeEditModal()" style="background: var(--danger); color: white; width: 100%; margin-top: 8px;">Cancel</button>
+        <button onclick="commitEdit()" style="background: var(--btn-primary); color: white; border: none; width: 100%; margin-top: 15px;">Save Changes</button>
+        <button onclick="closeEditModal()" style="background: white; color: var(--text); border: 1px solid #ccc; width: 100%; margin-top: 8px;">Cancel</button>
     </div>
 </div>
 
@@ -288,8 +293,8 @@
         <div class="side-bar">NOTES</div>
         <input type="text" id="es-notes" placeholder="e.g. Feeds Site C">
 
-        <button onclick="commitEditSplice()" style="background: var(--success); color: white; width: 100%; margin-top: 15px;">Save Changes</button>
-        <button onclick="closeEditSpliceModal()" style="background: var(--danger); color: white; width: 100%; margin-top: 8px;">Cancel</button>
+        <button onclick="commitEditSplice()" style="background: var(--btn-primary); color: white; border: none; width: 100%; margin-top: 15px;">Save Changes</button>
+        <button onclick="closeEditSpliceModal()" style="background: white; color: var(--text); border: 1px solid #ccc; width: 100%; margin-top: 8px;">Cancel</button>
     </div>
 </div>
 
@@ -300,11 +305,23 @@
     let editingSpliceId = null;
     let editingSpliceLocId = null;
     let managingCablesLocId = null;
+    let splicedExpanded = {}; // Track which locations have expanded splices (default: all expanded)
+    let allSplicesExpanded = true; // Track global state
     const colors = { "BLUE": "#0000FF", "ORANGE": "#FFA500", "GREEN": "#008000", "BROWN": "#8B4513", "SLATE": "#808080", "WHITE": "#FFFFFF", "RED": "#FF0000", "BLACK": "#000000", "YELLOW": "#FFFF00", "VIOLET": "#EE82EE", "ROSE": "#FFC0CB", "AQUA": "#00FFFF" };
+
+    // Session metadata
+    let sessionMetadata = {
+        technician: "",
+        projectName: ""
+    };
 
     // Auto-save to localStorage every 30 seconds
     setInterval(() => {
-        localStorage.setItem('FMPsession', JSON.stringify(savedData));
+        const dataToSave = {
+            locations: savedData,
+            metadata: sessionMetadata
+        };
+        localStorage.setItem('FMPsession', JSON.stringify(dataToSave));
         const now = new Date();
         const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
         document.getElementById('autosave-status').textContent = `Auto-saved at ${timeStr}`;
@@ -315,7 +332,15 @@
         const cached = localStorage.getItem('FMPsession');
         if (cached) {
             try {
-                savedData = JSON.parse(cached);
+                const data = JSON.parse(cached);
+                if (data.locations) {
+                    savedData = data.locations;
+                }
+                if (data.metadata) {
+                    sessionMetadata = data.metadata;
+                    document.getElementById('technician-input').value = sessionMetadata.technician || '';
+                    document.getElementById('project-input').value = sessionMetadata.projectName || '';
+                }
                 updateUI();
                 console.log('Session restored from local storage');
             } catch (e) {
@@ -323,12 +348,6 @@
             }
         }
     });
-
-    function toggleTheme() {
-        const body = document.body;
-        const current = body.getAttribute('data-theme');
-        body.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
-    }
 
     function openHelp() {
         document.getElementById('help-modal').classList.add('open');
@@ -445,6 +464,9 @@
         if (document.getElementById('edit-splice-modal').classList.contains('open')) {
             populateCableOptions(managingCablesLocId);
         }
+        
+        // Close the cable modal after adding items
+        closeCableModal();
     }
 
     function openSpliceModal(id) {
@@ -592,7 +614,13 @@
             return `<div class="swatch-box"><span class="swatch-label">${label}</span><div style="font-size:11px;font-weight:bold;padding:4px;text-align:center;background:var(--row-bg);border-radius:4px;border:1px solid var(--border);">${name}</div></div>`;
         }
         
-        return `<div class="swatch-box"><span class="swatch-label">${label}</span><div class="swatch ${isS ? 'stripe' : ''}" style="${style}"></div></div>`;
+        // Determine stripe class: white stripe for BLACK-STRIPE only, black stripe for others
+        let stripeClass = '';
+        if (isS) {
+            stripeClass = name === 'BLACK-STRIPE' ? 'stripe-white' : 'stripe';
+        }
+        
+        return `<div class="swatch-box"><span class="swatch-label">${label}</span><div class="swatch ${stripeClass}" style="${style}"></div></div>`;
     }
 
     function updateUI() {
@@ -600,6 +628,12 @@
         const searchTerm = document.getElementById('search-input').value.toLowerCase();
         
         const filtered = savedData.filter(loc => loc.name.toLowerCase().includes(searchTerm));
+        
+        // Update global toggle button text
+        const toggleBtn = document.getElementById('global-toggle-btn');
+        if (toggleBtn) {
+            toggleBtn.textContent = allSplicesExpanded ? '⬆️ Collapse All' : '⬇️ Expand All';
+        }
         
         cont.innerHTML = filtered.map(loc => `
             <div class="loc-card">
@@ -613,11 +647,13 @@
                         </div>
                     </div>
                     <div style="display:flex;gap:4px;flex-direction:column;">
+                        <button class="loc-collapse-btn" onclick="toggleSpliceExpand(${loc.id})">${splicedExpanded[loc.id] === false ? '⬇️ Expand' : '⬆️ Collapse'}</button>
                         <button class="loc-cable-btn" onclick="openCableModal(${loc.id})">🔌 Cables/Devices</button>
                         <button class="loc-add-btn" onclick="openSpliceModal(${loc.id})">+ Add Splice</button>
-                        <button style="min-height:30px; padding:0 8px; font-size:10px; background:var(--danger); color:white; border:none; border-radius:6px; cursor:pointer;" onclick="deleteLocation(${loc.id})">🗑️ Delete</button>
+                        <button style="min-height:30px; padding:0 8px; font-size:10px; background:#d32f2f; color:white; border:none; border-radius:6px; cursor:pointer;" onclick="deleteLocation(${loc.id})">🗑️ Delete</button>
                     </div>
                 </div>
+                <div class="splices-container ${splicedExpanded[loc.id] !== false ? 'expanded' : ''}">
                 ${loc.splices.map(s => `
                     <div class="splice-row">
                         <button class="btn-del-row" onclick="deleteSplice(${loc.id}, ${s.id})">×</button>
@@ -635,14 +671,19 @@
                             </div>
                         </div>
                         ${s.notes ? `<div class="splice-notes">Note: ${s.notes}</div>` : ''}
-                        <div style="text-align:center;margin-top:8px;"><button style="font-size:10px;padding:4px 8px;background:var(--primary);color:white;border:none;border-radius:4px;cursor:pointer;" onclick="openEditSpliceModal(${loc.id}, ${s.id})">✏️ Edit Splice</button></div>
+                        <div style="text-align:center;margin-top:8px;"><button style="font-size:10px;padding:4px 8px;background:var(--btn-primary);color:white;border:none;border-radius:4px;cursor:pointer;" onclick="openEditSpliceModal(${loc.id}, ${s.id})">✏️ Edit Splice</button></div>
                     </div>
                 `).join('')}
+                </div>
             </div>
         `).reverse().join('');
     }
 
     function exportAllCSVsAsZip() {
+        // Update metadata from input fields
+        sessionMetadata.technician = document.getElementById('technician-input').value;
+        sessionMetadata.projectName = document.getElementById('project-input').value;
+
         if (typeof JSZip === 'undefined') {
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
@@ -653,35 +694,55 @@
         }
     }
 
+    function sanitizeFilename(str) {
+        // Remove or replace characters that are invalid in Windows filenames
+        return str.replace(/[<>:"|?*\\\/]/g, '_').replace(/\s+/g, '_');
+    }
+
     function createZip() {
         const zip = new JSZip();
         const now = new Date();
         const dateStr = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getFullYear()).padStart(3, '0');
         const timeStr = String(now.getHours()).padStart(2, '0') + '.' + String(now.getMinutes()).padStart(2, '0');
         
+        const projectName = sessionMetadata.projectName ? sanitizeFilename(sessionMetadata.projectName) : 'NoProject';
+        
         savedData.forEach(loc => {
-            let csv = `Location ID:,${loc.name}\nGrid Coordinates:,${loc.lat} ${loc.lon}\nExport Date:,${dateStr}\n\n`;
-            csv += `CABLE/DEVICE ID 1,BUNDLE 1,FIBER 1, ,CABLE/DEVICE ID 2,BUNDLE 2,FIBER 2,SPLICE NOTES\n`;
+            let csv = `Location ID:,${loc.name}\nGrid Coordinates:,${loc.lat} ${loc.lon}\nExport Date:,${dateStr}\n`;
+            if (sessionMetadata.technician) csv += `Technician:,${sessionMetadata.technician}\n`;
+            if (sessionMetadata.projectName) csv += `Project:,${sessionMetadata.projectName}\n`;
+            csv += `\nCABLE/DEVICE ID 1,BUNDLE 1,FIBER 1, ,CABLE/DEVICE ID 2,BUNDLE 2,FIBER 2,SPLICE NOTES\n`;
             loc.splices.forEach(s => csv += `"${s.id1}","${s.b1}","${s.f1}","<>","${s.id2}","${s.b2}","${s.f2}","${s.notes}"\n`);
-            zip.file(`${loc.name}_SpliceMatrix_${dateStr}_${timeStr}.csv`, csv);
+            zip.file(`${projectName}_${loc.name}_SpliceMatrix_${dateStr}_${timeStr}.csv`, csv);
         });
 
         zip.generateAsync({ type: 'blob' }).then((blob) => {
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = `FMPcsv_${dateStr}_${timeStr}.zip`;
+            a.download = `FMP_${projectName}_${dateStr}_${timeStr}.zip`;
             a.click();
         });
     }
 
     function saveToFile() {
+        // Update metadata from input fields
+        sessionMetadata.technician = document.getElementById('technician-input').value;
+        sessionMetadata.projectName = document.getElementById('project-input').value;
+
         const now = new Date();
         const dateStr = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getFullYear()).padStart(3, '0');
         const timeStr = String(now.getHours()).padStart(2, '0') + '.' + String(now.getMinutes()).padStart(2, '0');
         
+        const projectName = sessionMetadata.projectName ? sanitizeFilename(sessionMetadata.projectName) : 'NoProject';
+        
+        const dataToSave = {
+            locations: savedData,
+            metadata: sessionMetadata
+        };
+
         const a = document.createElement('a');
-        a.href = URL.createObjectURL(new Blob([JSON.stringify(savedData, null, 2)], { type: "application/json" }));
-        a.download = `FMPsession_${dateStr}_${timeStr}.JSON`;
+        a.href = URL.createObjectURL(new Blob([JSON.stringify(dataToSave, null, 2)], { type: "application/json" }));
+        a.download = `FMPsession_${projectName}_${dateStr}_${timeStr}.JSON`;
         a.click();
     }
 
@@ -692,8 +753,22 @@
         const reader = new FileReader();
         reader.onload = (ev) => { 
             try { 
-                savedData = JSON.parse(ev.target.result); 
-                localStorage.setItem('FMPsession', JSON.stringify(savedData));
+                const data = JSON.parse(ev.target.result);
+                
+                // Handle both old format (array) and new format (object with metadata)
+                if (Array.isArray(data)) {
+                    savedData = data;
+                    sessionMetadata = { technician: "", projectName: "" };
+                } else {
+                    savedData = data.locations || [];
+                    sessionMetadata = data.metadata || { technician: "", projectName: "" };
+                }
+                
+                // Update input fields with loaded metadata
+                document.getElementById('technician-input').value = sessionMetadata.technician || '';
+                document.getElementById('project-input').value = sessionMetadata.projectName || '';
+                
+                localStorage.setItem('FMPsession', JSON.stringify({ locations: savedData, metadata: sessionMetadata }));
                 updateUI();
                 alert("File loaded successfully!");
             } catch(err) { 
@@ -712,11 +787,35 @@
             
             if (doubleConfirmed) {
                 savedData = [];
+                splicedExpanded = {};
                 localStorage.removeItem('FMPsession');
                 updateUI();
                 alert("✓ Session cleared. All data has been deleted.");
             }
         }
+    }
+
+    function toggleSpliceExpand(locId) {
+        if (splicedExpanded[locId] === undefined) {
+            splicedExpanded[locId] = false; // Collapse if currently expanded (default)
+        } else {
+            splicedExpanded[locId] = !splicedExpanded[locId];
+        }
+        updateUI();
+    }
+
+    function toggleAllSplices() {
+        allSplicesExpanded = !allSplicesExpanded;
+        if (allSplicesExpanded) {
+            savedData.forEach(loc => {
+                splicedExpanded[loc.id] = true;
+            });
+        } else {
+            savedData.forEach(loc => {
+                splicedExpanded[loc.id] = false;
+            });
+        }
+        updateUI();
     }
 
     initOptions();
