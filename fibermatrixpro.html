@@ -26,6 +26,18 @@
         header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; text-transform: uppercase; }
         header h1 span { color: var(--brand-gold); font-size: 10px; }
         #theme-btn { background: none; border: 1px solid #555; color: white; padding: 5px 10px; border-radius: 20px; font-size: 18px; min-height: auto; width: auto; }
+        #help-btn { background: none; border: 1px solid #555; color: white; padding: 5px 10px; border-radius: 20px; font-size: 18px; min-height: auto; width: auto; }
+
+        /* Help Modal */
+        #help-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 300; overflow-y: auto; padding: 20px; }
+        .help-content { background: var(--card); padding: 30px; border-radius: 15px; max-width: 700px; margin: auto; color: var(--text); line-height: 1.8; }
+        .help-content h2 { color: var(--primary); margin-top: 20px; margin-bottom: 10px; font-size: 18px; }
+        .help-content h3 { color: var(--dark); margin-top: 15px; margin-bottom: 8px; font-size: 15px; }
+        .help-content p { margin: 8px 0; }
+        .help-section { background: var(--row-bg); padding: 15px; border-radius: 8px; margin: 12px 0; border-left: 4px solid var(--primary); }
+        .help-step { background: var(--row-bg); padding: 12px; margin: 10px 0; border-radius: 6px; }
+        .help-step strong { color: var(--primary); }
+        #close-help-btn { background: var(--danger); color: white; width: 100%; margin-top: 20px; }
 
         /* Controls */
         .app-container { padding: 10px; }
@@ -105,7 +117,10 @@
 
 <header>
     <h1>Fiber Matrix <span>PRO</span></h1>
-    <button id="theme-btn" onclick="toggleTheme()">🌓</button>
+    <div style="display: flex; gap: 8px;">
+        <button id="help-btn" onclick="openHelp()">❓</button>
+        <button id="theme-btn" onclick="toggleTheme()">🌓</button>
+    </div>
 </header>
 
 <div class="app-container">
@@ -120,8 +135,71 @@
     <div id="list-content"></div>
 </div>
 
-<!-- Modal for Manual Coordinates -->
-<div id="manual-coord-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:250; padding:15px;">
+<!-- Help Modal -->
+<div id="help-modal">
+    <div class="help-content">
+        <h2 style="margin-top: 0;">📘 Fiber Matrix Pro — User Guide</h2>
+        
+        <h3>Overview</h3>
+        <p>Fiber Matrix Pro is a field-ready splice documentation tool. Pin your location, record fiber optic splices between cable pairs, and export a clear CSV report for each location.</p>
+
+        <h3>Core Workflow</h3>
+        <div class="help-step">
+            <strong>1. Record New Location</strong>
+            <p>Click the blue "📍 Record New Location" button. The app will attempt to capture your GPS coordinates. If GPS is unavailable or denied, you'll be prompted to enter latitude and longitude manually.</p>
+        </div>
+        <div class="help-step">
+            <strong>2. Name Your Location</strong>
+            <p>Enter a descriptive name (e.g., "Tower Site A", "Fiber Vault"). This becomes the location ID and CSV filename.</p>
+        </div>
+        <div class="help-step">
+            <strong>3. Add Splices</strong>
+            <p>Click "+ Add Splice" on any location card. Fill in the splice details and confirm. You can add as many splices as needed.</p>
+        </div>
+        <div class="help-step">
+            <strong>4. Save Your Work</strong>
+            <p>Click "💾 Save" to download a JSON backup file. This preserves all locations and splices for later reload.</p>
+        </div>
+        <div class="help-step">
+            <strong>5. Export CSVs</strong>
+            <p>Click "📊 Export Excel CSVs" to generate one CSV per location. Each file includes the location name, coordinates, export date, and all splices in a spreadsheet-ready format.</p>
+        </div>
+
+        <h3>Splice Fields Explained</h3>
+        <div class="help-section">
+            <p><strong>Cable/Device ID 1 & 2:</strong> The identifiers for the two cables or devices being spliced (e.g., "CAB-001", "DEVICE-B").</p>
+            <p><strong>Bundle (BNDL):</strong> The fiber bundle color (BLUE, ORANGE, GREEN, etc.). Can also use STRIPE variants (e.g., BLACK-STRIPE) for striped bundles.</p>
+            <p><strong>Fiber (FIBR):</strong> The individual fiber color within the bundle.</p>
+            <p><strong>Notes:</strong> Optional text field for splice notes (e.g., "Feeds Site C", "Temporary patch").</p>
+        </div>
+
+        <h3>Editing & Deletion</h3>
+        <p><strong>Recenter GPS:</strong> Click the "📡 Recenter" button on a location to update its coordinates with a fresh GPS reading.</p>
+        <p><strong>Delete Splice:</strong> Click the "×" button on any splice row to remove it. A confirmation will appear.</p>
+        <p><strong>Manual Override:</strong> In the splice modal, click "OVERRIDE" next to Bundle or Fiber to enter custom text instead of selecting from the color dropdown.</p>
+
+        <h3>File Management</h3>
+        <div class="help-section">
+            <p><strong>💾 Save:</strong> Downloads a JSON file with all your data. Keep this as a backup or to reload later.</p>
+            <p><strong>📂 Load:</strong> Select a previously saved JSON file to restore all locations and splices.</p>
+            <p><strong>📊 Export Excel CSVs:</strong> Generates one CSV per location. Use these in spreadsheet software or share with your team.</p>
+        </div>
+
+        <h3>Theme Toggle</h3>
+        <p>Click the "🌓" button in the top right to switch between light and dark mode. Your choice persists while the app is open.</p>
+
+        <h3>Tips</h3>
+        <ul style="margin: 10px 0; padding-left: 20px;">
+            <li>Always save your work frequently using the "💾 Save" button.</li>
+            <li>Use descriptive location names — they become CSV filenames.</li>
+            <li>The JSON backup is portable — load it on any device with this app.</li>
+            <li>Stripe colors (e.g., BLACK-STRIPE) are useful for identifying bundle sheath patterns.</li>
+            <li>Recenter GPS if conditions have improved or for verification.</li>
+        </ul>
+
+        <button id="close-help-btn" onclick="closeHelp()">Close Help</button>
+    </div>
+</div>
     <div class="modal-content">
         <h2 style="margin:0;">Enter Coordinates Manually</h2>
         <p style="font-size:12px; color:#666; margin:10px 0;">GPS is unavailable. Please enter coordinates manually.</p>
@@ -167,6 +245,14 @@
         body.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
     }
 
+    function openHelp() {
+        document.getElementById('help-modal').style.display = 'block';
+    }
+
+    function closeHelp() {
+        document.getElementById('help-modal').style.display = 'none';
+    }
+
     function initOptions() {
         const bundleList = [...Object.keys(colors), ...Object.keys(colors).map(c => c + "-STRIPE")];
         document.querySelectorAll('.bundle-opt').forEach(s => s.innerHTML = '<option value="">Select Bundle...</option>' + bundleList.map(b => `<option value="${b}">${b}</option>`).join(''));
@@ -184,15 +270,15 @@
     }
 
     function getLocation() {
+        const name = prompt("Location Name:");
+        if (!name) return;
+        
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                const name = prompt("Location Name:");
-                if (name) {
-                    const loc = { id: Date.now(), name, lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), splices: [] };
-                    savedData.push(loc);
-                    updateUI();
-                    openSpliceModal(loc.id);
-                }
+                const loc = { id: Date.now(), name, lat: pos.coords.latitude.toFixed(5), lon: pos.coords.longitude.toFixed(5), splices: [] };
+                savedData.push(loc);
+                updateUI();
+                openSpliceModal(loc.id);
             }, 
             (err) => {
                 // GPS failed or denied - fall back to manual entry
