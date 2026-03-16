@@ -108,8 +108,6 @@
         .loc-buttons { display: flex; gap: 4px; }
         .loc-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: var(--row-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
         .loc-btn-primary { background: var(--primary); color: white; border: none; }
-
-        /* Help Styles */
         .help-content h2 { color: var(--primary); margin-top: 0; margin-bottom: 10px; font-size: 18px; }
         .help-content h3 { color: var(--dark); margin-top: 15px; margin-bottom: 8px; font-size: 15px; }
         .help-content p { margin: 8px 0; }
@@ -134,7 +132,8 @@
         <button class="btn-main" onclick="getLocation()">📍 Record New Location</button>
         <button style="background: var(--success); color: white;" onclick="saveToFile()">💾 Save</button>
         <button style="background: #777; color: white;" onclick="document.getElementById('loadInput').click()">📂 Load</button>
-        <button style="background: var(--dark); color: white; grid-column: span 2;" onclick="exportAllCSVs()">📊 Export Excel CSVs</button>
+        <button style="background: var(--dark); color: white; grid-column: span 2;" onclick="exportAllCSVsAsZip()">📊 Export Excel CSVs</button>
+        <input type="text" id="search-input" placeholder="Search locations..." style="grid-column: span 2; height: 44px; margin-top: 5px;" onkeyup="updateUI()">
         <input type="file" id="loadInput" style="display:none" accept=".json" onchange="loadFromFile(event)">
     </div>
 
@@ -228,10 +227,34 @@
     </div>
 </div>
 
+<!-- Edit Splice Modal -->
+<div id="edit-splice-modal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin:0;">Edit Splice</h2>
+        <div class="side-bar">SIDE 1 (FROM)</div>
+        <input type="text" id="es-id1" placeholder="Cable/Device ID 1">
+        <div class="input-group" id="es-b1-group"><select id="es-b1" class="bundle-opt"></select><span class="override-link" onclick="toggleOverride('es-b1')">OVERRIDE</span></div>
+        <div class="input-group" id="es-f1-group"><select id="es-f1" class="fiber-opt"></select><span class="override-link" onclick="toggleOverride('es-f1')">OVERRIDE</span></div>
+
+        <div class="side-bar">SIDE 2 (TO)</div>
+        <input type="text" id="es-id2" placeholder="Cable/Device ID 2">
+        <div class="input-group" id="es-b2-group"><select id="es-b2" class="bundle-opt"></select><span class="override-link" onclick="toggleOverride('es-b2')">OVERRIDE</span></div>
+        <div class="input-group" id="es-f2-group"><select id="es-f2" class="fiber-opt"></select><span class="override-link" onclick="toggleOverride('es-f2')">OVERRIDE</span></div>
+
+        <div class="side-bar">NOTES</div>
+        <input type="text" id="es-notes" placeholder="e.g. Feeds Site C">
+
+        <button onclick="commitEditSplice()" style="background: var(--success); color: white; width: 100%; margin-top: 15px;">Save Changes</button>
+        <button onclick="closeEditSpliceModal()" style="background: var(--danger); color: white; width: 100%; margin-top: 8px;">Cancel</button>
+    </div>
+</div>
+
 <script>
     let savedData = [];
     let currentLocId = null;
     let editingLocId = null;
+    let editingSpliceId = null;
+    let editingSpliceLocId = null;
     const colors = { "BLUE": "#0000FF", "ORANGE": "#FFA500", "GREEN": "#008000", "BROWN": "#8B4513", "SLATE": "#808080", "WHITE": "#FFFFFF", "RED": "#FF0000", "BLACK": "#000000", "YELLOW": "#FFFF00", "VIOLET": "#EE82EE", "ROSE": "#FFC0CB", "AQUA": "#00FFFF" };
 
     function toggleTheme() {
@@ -320,6 +343,54 @@
         }
     }
 
+    function openEditSpliceModal(locId, spliceId) {
+        const loc = savedData.find(l => l.id === locId);
+        const splice = loc.splices.find(s => s.id === spliceId);
+        if (!splice) return;
+        
+        editingSpliceLocId = locId;
+        editingSpliceId = spliceId;
+        
+        document.getElementById('es-id1').value = splice.id1;
+        document.getElementById('es-b1').value = splice.b1;
+        document.getElementById('es-f1').value = splice.f1;
+        document.getElementById('es-id2').value = splice.id2;
+        document.getElementById('es-b2').value = splice.b2;
+        document.getElementById('es-f2').value = splice.f2;
+        document.getElementById('es-notes').value = splice.notes;
+        
+        document.getElementById('edit-splice-modal').classList.add('open');
+    }
+
+    function closeEditSpliceModal() {
+        document.getElementById('edit-splice-modal').classList.remove('open');
+        editingSpliceId = null;
+        editingSpliceLocId = null;
+    }
+
+    function commitEditSplice() {
+        const loc = savedData.find(l => l.id === editingSpliceLocId);
+        const splice = loc.splices.find(s => s.id === editingSpliceId);
+        
+        splice.id1 = document.getElementById('es-id1').value;
+        splice.b1 = document.getElementById('es-b1').value;
+        splice.f1 = document.getElementById('es-f1').value;
+        splice.id2 = document.getElementById('es-id2').value;
+        splice.b2 = document.getElementById('es-b2').value;
+        splice.f2 = document.getElementById('es-f2').value;
+        splice.notes = document.getElementById('es-notes').value;
+        
+        closeEditSpliceModal();
+        updateUI();
+    }
+
+    function deleteLocation(locId) {
+        if (confirm("Delete this location and all its splices?")) {
+            savedData = savedData.filter(l => l.id !== locId);
+            updateUI();
+        }
+    }
+
     function openEditModal(locId) {
         const loc = savedData.find(l => l.id === locId);
         if (!loc) return;
@@ -367,7 +438,11 @@
 
     function updateUI() {
         const cont = document.getElementById('list-content');
-        cont.innerHTML = savedData.map(loc => `
+        const searchTerm = document.getElementById('search-input').value.toLowerCase();
+        
+        const filtered = savedData.filter(loc => loc.name.toLowerCase().includes(searchTerm));
+        
+        cont.innerHTML = filtered.map(loc => `
             <div class="loc-card">
                 <div class="loc-header">
                     <div class="loc-info">
@@ -375,9 +450,13 @@
                         <div class="loc-details">
                             <strong>${loc.name}</strong>
                             <div style="font-size:11px;color:#888">${loc.lat}, ${loc.lon}</div>
+                            <div style="font-size:10px;color:#666;margin-top:4px;">${loc.splices.length} splice${loc.splices.length !== 1 ? 's' : ''}</div>
                         </div>
                     </div>
-                    <button class="loc-add-btn" onclick="openSpliceModal(${loc.id})">+ Add Splice</button>
+                    <div style="display:flex;gap:4px;flex-direction:column;">
+                        <button class="loc-add-btn" onclick="openSpliceModal(${loc.id})">+ Add Splice</button>
+                        <button style="min-height:30px; padding:0 8px; font-size:10px; background:var(--danger); color:white; border:none; border-radius:6px; cursor:pointer;" onclick="deleteLocation(${loc.id})">🗑️ Delete</button>
+                    </div>
                 </div>
                 ${loc.splices.map(s => `
                     <div class="splice-row">
@@ -398,29 +477,54 @@
                             </div>
                         </div>
                         ${s.notes ? `<div class="splice-notes">Note: ${s.notes}</div>` : ''}
+                        <div style="text-align:center;margin-top:8px;"><button style="font-size:10px;padding:4px 8px;background:var(--primary);color:white;border:none;border-radius:4px;cursor:pointer;" onclick="openEditSpliceModal(${loc.id}, ${s.id})">✏️ Edit Splice</button></div>
                     </div>
                 `).join('')}
             </div>
         `).reverse().join('');
     }
 
-    function exportAllCSVs() {
-        const ds = new Date().toLocaleDateString().replace(/\//g, '-');
+    function exportAllCSVsAsZip() {
+        // Check if JSZip is available, if not load it
+        if (typeof JSZip === 'undefined') {
+            const script = document.createElement('script');
+            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+            script.onload = () => createZip();
+            document.head.appendChild(script);
+        } else {
+            createZip();
+        }
+    }
+
+    function createZip() {
+        const zip = new JSZip();
+        const now = new Date();
+        const dateStr = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getFullYear()).padStart(3, '0');
+        const timeStr = String(now.getHours()).padStart(2, '0') + '.' + String(now.getMinutes()).padStart(2, '0');
+        
         savedData.forEach(loc => {
-            let csv = `Location ID:,${loc.name}\nGrid Coordinates:,${loc.lat} ${loc.lon}\nExport Date:,${ds}\n\n`;
+            let csv = `Location ID:,${loc.name}\nGrid Coordinates:,${loc.lat} ${loc.lon}\nExport Date:,${dateStr}\n\n`;
             csv += `CABLE/DEVICE ID 1,BUNDLE 1,FIBER 1, ,CABLE/DEVICE ID 2,BUNDLE 2,FIBER 2,SPLICE NOTES\n`;
             loc.splices.forEach(s => csv += `"${s.id1}","${s.b1}","${s.f1}","<>","${s.id2}","${s.b2}","${s.f2}","${s.notes}"\n`);
+            zip.file(`${loc.name}_SpliceMatrix_${dateStr}_${timeStr}.csv`, csv);
+        });
+
+        zip.generateAsync({ type: 'blob' }).then((blob) => {
             const a = document.createElement('a');
-            a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-            a.download = `${loc.name}_SpliceMatrix_${ds}.csv`;
+            a.href = URL.createObjectURL(blob);
+            a.download = `FMPcsv_${dateStr}_${timeStr}.zip`;
             a.click();
         });
     }
 
     function saveToFile() {
+        const now = new Date();
+        const dateStr = String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0') + '-' + String(now.getFullYear()).padStart(3, '0');
+        const timeStr = String(now.getHours()).padStart(2, '0') + '.' + String(now.getMinutes()).padStart(2, '0');
+        
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([JSON.stringify(savedData, null, 2)], { type: "application/json" }));
-        a.download = `Fiber_Matrix_Master.json`;
+        a.download = `FMPsession_${dateStr}_${timeStr}.JSON`;
         a.click();
     }
 
