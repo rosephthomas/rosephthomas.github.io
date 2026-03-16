@@ -26,6 +26,7 @@
         header h1 { margin: 0; font-size: 20px; letter-spacing: 1px; text-transform: uppercase; }
         header h1 span { color: var(--brand-gold); font-size: 10px; }
         #theme-btn, #help-btn { background: none; border: 1px solid #555; color: white; padding: 5px 10px; border-radius: 20px; font-size: 18px; min-height: auto; width: auto; cursor: pointer; }
+        .header-status { font-size: 11px; color: #aaa; margin-left: 10px; }
 
         /* Controls */
         .app-container { padding: 10px; }
@@ -39,6 +40,7 @@
         .loc-info { flex: 1; display: flex; gap: 8px; align-items: flex-start; }
         .loc-details { flex: 1; }
         .loc-edit-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+        .loc-cable-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: #9b59b6; color: white; border: none; border-radius: 6px; cursor: pointer; white-space: nowrap; }
         .loc-add-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; }
         
         /* Splice Rows */
@@ -58,7 +60,9 @@
         .modal.open { display: block; }
         .modal-content { background: var(--card); padding: 20px; border-radius: 15px; max-width: 500px; margin: auto; color: var(--text); }
         .side-bar { background: var(--dark); color: white; padding: 8px; text-align: center; margin: 15px 0 10px; border-radius: 6px; font-weight: bold; }
-        input, select { background: var(--input-bg); color: var(--input-text); height: 44px; padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; width: 100%; box-sizing: border-box; margin-top: 5px; }
+        input, select, textarea { background: var(--input-bg); color: var(--input-text); padding: 0 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; width: 100%; box-sizing: border-box; margin-top: 5px; }
+        input, select { height: 44px; }
+        textarea { height: 100px; padding: 10px; font-family: monospace; }
         .input-group { display: flex; align-items: center; gap: 8px; }
         .override-link { font-size: 11px; color: var(--primary); font-weight: bold; white-space: nowrap; padding: 10px 0; cursor: pointer; }
 
@@ -108,6 +112,30 @@
         .loc-buttons { display: flex; gap: 4px; }
         .loc-btn { min-height: 30px; padding: 0 8px; font-size: 10px; background: var(--row-bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
         .loc-btn-primary { background: var(--primary); color: white; border: none; }
+
+        /* Clear All Button */
+        .btn-clear-all { 
+            background: linear-gradient(135deg, #ffcc00 0%, #ff6600 50%, #cc0000 100%);
+            color: black;
+            border: 3px solid #000;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        .btn-clear-all:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Cable List in Modal */
+        .cable-list { background: var(--row-bg); padding: 10px; border-radius: 6px; margin-top: 10px; max-height: 150px; overflow-y: auto; }
+        .cable-item { display: flex; justify-content: space-between; align-items: center; padding: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 4px; margin-bottom: 6px; }
+        .cable-item-name { font-weight: bold; font-size: 13px; }
+        .cable-item-delete { background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-size: 11px; }
+
+        /* Help Styles */
         .help-content h2 { color: var(--primary); margin-top: 0; margin-bottom: 10px; font-size: 18px; }
         .help-content h3 { color: var(--dark); margin-top: 15px; margin-bottom: 8px; font-size: 15px; }
         .help-content p { margin: 8px 0; }
@@ -121,7 +149,8 @@
 
 <header>
     <h1>Fiber Matrix <span>PRO</span></h1>
-    <div style="display: flex; gap: 8px;">
+    <div style="display: flex; gap: 8px; align-items: center;">
+        <span class="header-status" id="autosave-status"></span>
         <button id="help-btn" onclick="openHelp()">❓</button>
         <button id="theme-btn" onclick="toggleTheme()">🌓</button>
     </div>
@@ -138,6 +167,11 @@
     </div>
 
     <div id="list-content"></div>
+
+    <!-- Clear All Button at Bottom -->
+    <div style="padding: 20px; text-align: center; border-top: 1px solid var(--border); margin-top: 40px;">
+        <button class="btn-clear-all" onclick="confirmClearAll()">⚠️ CLEAR ALL SESSION DATA ⚠️</button>
+    </div>
 </div>
 
 <!-- Help Modal -->
@@ -154,40 +188,50 @@
             <p>Click the blue "📍 Record New Location" button. The app will attempt to capture your GPS coordinates. If GPS is unavailable or denied, you'll still create the location and can edit coordinates later.</p>
         </div>
         <div class="help-step">
-            <strong>2. Add Splices</strong>
-            <p>Click "+ Add Splice" on any location card. Fill in the splice details and confirm. You can add as many splices as needed.</p>
+            <strong>2. Define Cable/Device Inventory</strong>
+            <p>When creating your first splice, a modal will appear to define your cable/device inventory for that location. Enter items separated by commas or line breaks (cables, devices, fiber optic pigtails, optical splitters, etc.). You can edit this list anytime by clicking the purple "🔌 Cables/Devices" button.</p>
         </div>
         <div class="help-step">
-            <strong>3. Edit Location</strong>
-            <p>Click "✏️ Edit" on a location to update its name and coordinates anytime.</p>
+            <strong>3. Add Splices</strong>
+            <p>Click "+ Add Splice" on any location card. Select cable/devices from the dropdowns and confirm. You can add as many splices as needed.</p>
         </div>
         <div class="help-step">
-            <strong>4. Save Your Work</strong>
-            <p>Click "💾 Save" to download a JSON backup file. This preserves all locations and splices for later reload.</p>
+            <strong>4. Edit & Manage</strong>
+            <p>Click "✏️ Edit" to update location details, or "🔌 Cables/Devices" to manage your inventory. Each splice can be edited with the "✏️ Edit Splice" button.</p>
         </div>
         <div class="help-step">
-            <strong>5. Export CSVs</strong>
-            <p>Click "📊 Export Excel CSVs" to generate one CSV per location. Each file includes the location name, coordinates, export date, and all splices in a spreadsheet-ready format.</p>
+            <strong>5. Save & Export</strong>
+            <p>Click "💾 Save" to download a JSON backup. Click "📊 Export Excel CSVs" to download a zip file with spreadsheet-ready exports.</p>
         </div>
 
-        <h3>Splice Fields Explained</h3>
+        <h3>Auto-Save</h3>
+        <p>Your work is automatically saved every 30 seconds to your browser's local storage. If you close the tab and reopen it, your data will be restored automatically. Use the manual "💾 Save" button for portable JSON backups.</p>
+
+        <h3>Cable/Device Management</h3>
         <div class="help-section">
-            <p><strong>Cable/Device ID 1 & 2:</strong> The identifiers for the two cables or devices being spliced (e.g., "CAB-001", "DEVICE-B").</p>
-            <p><strong>Bundle (BNDL):</strong> The fiber bundle color (BLUE, ORANGE, GREEN, etc.). Can also use STRIPE variants (e.g., BLACK-STRIPE) for striped bundles.</p>
-            <p><strong>Fiber (FIBR):</strong> The individual fiber color within the bundle.</p>
-            <p><strong>Notes:</strong> Optional text field for splice notes (e.g., "Feeds Site C", "Temporary patch").</p>
+            <p><strong>Per-Location Inventory:</strong> Each location has its own cable/device inventory. Enter items when creating your first splice, or manage them later via the "🔌 Cables/Devices" button.</p>
+            <p><strong>What to Include:</strong> Cables, devices, fiber optic pigtails, optical splitters, or any other network components at the location.</p>
+            <p><strong>Input Format:</strong> Separate items by commas or place each on a new line:</p>
+            <p style="font-size:12px;font-family:monospace;background:var(--row-bg);padding:8px;border-radius:4px;">48ct East, node tail, 8ch DMX<br/>or<br/>48ct East<br/>node tail<br/>8ch DMX</p>
         </div>
-
-        <h3>Tips</h3>
-        <ul>
-            <li>Always save your work frequently using the "💾 Save" button.</li>
-            <li>Use descriptive location names — they become CSV filenames.</li>
-            <li>The JSON backup is portable — load it on any device with this app.</li>
-            <li>Stripe colors (e.g., BLACK-STRIPE) are useful for identifying bundle sheath patterns.</li>
-            <li>Edit locations anytime to fix coordinates or names.</li>
-        </ul>
 
         <button onclick="closeHelp()" style="background: var(--danger); color: white; width: 100%; margin-top: 20px;">Close Help</button>
+    </div>
+</div>
+
+<!-- Cable Management Modal -->
+<div id="cable-modal" class="modal">
+    <div class="modal-content">
+        <h2 style="margin:0;">🔌 Cables/Devices Inventory</h2>
+        <p style="font-size:12px;color:#666;margin:10px 0;">Define your cables and devices for this location. Separate items by commas or newlines.</p>
+        <div class="side-bar">ADD ITEMS</div>
+        <textarea id="cable-input" placeholder="48ct East, node tail, 8ch DMX&#10;or&#10;48ct East&#10;node tail&#10;8ch DMX"></textarea>
+        
+        <div class="side-bar" style="margin-top:15px;">CURRENT INVENTORY</div>
+        <div class="cable-list" id="cable-list-display"></div>
+        
+        <button onclick="addCablesToLocation()" style="background: var(--success); color: white; width: 100%; margin-top: 15px;">Add Items</button>
+        <button onclick="closeCableModal()" style="background: var(--danger); color: white; width: 100%; margin-top: 8px;">Done</button>
     </div>
 </div>
 
@@ -196,12 +240,12 @@
     <div class="modal-content">
         <h2 style="margin:0;">Splice Details</h2>
         <div class="side-bar">SIDE 1 (FROM)</div>
-        <input type="text" id="id1" placeholder="Cable/Device ID 1">
+        <div class="input-group" id="id1-group"><select id="id1" class="cable-opt"></select></div>
         <div class="input-group" id="b1-group"><select id="b1" class="bundle-opt"></select><span class="override-link" onclick="toggleOverride('b1')">OVERRIDE</span></div>
         <div class="input-group" id="f1-group"><select id="f1" class="fiber-opt"></select><span class="override-link" onclick="toggleOverride('f1')">OVERRIDE</span></div>
 
         <div class="side-bar">SIDE 2 (TO)</div>
-        <input type="text" id="id2" placeholder="Cable/Device ID 2">
+        <div class="input-group" id="id2-group"><select id="id2" class="cable-opt"></select></div>
         <div class="input-group" id="b2-group"><select id="b2" class="bundle-opt"></select><span class="override-link" onclick="toggleOverride('b2')">OVERRIDE</span></div>
         <div class="input-group" id="f2-group"><select id="f2" class="fiber-opt"></select><span class="override-link" onclick="toggleOverride('f2')">OVERRIDE</span></div>
 
@@ -232,12 +276,12 @@
     <div class="modal-content">
         <h2 style="margin:0;">Edit Splice</h2>
         <div class="side-bar">SIDE 1 (FROM)</div>
-        <input type="text" id="es-id1" placeholder="Cable/Device ID 1">
+        <div class="input-group" id="es-id1-group"><select id="es-id1" class="cable-opt"></select></div>
         <div class="input-group" id="es-b1-group"><select id="es-b1" class="bundle-opt"></select><span class="override-link" onclick="toggleOverride('es-b1')">OVERRIDE</span></div>
         <div class="input-group" id="es-f1-group"><select id="es-f1" class="fiber-opt"></select><span class="override-link" onclick="toggleOverride('es-f1')">OVERRIDE</span></div>
 
         <div class="side-bar">SIDE 2 (TO)</div>
-        <input type="text" id="es-id2" placeholder="Cable/Device ID 2">
+        <div class="input-group" id="es-id2-group"><select id="es-id2" class="cable-opt"></select></div>
         <div class="input-group" id="es-b2-group"><select id="es-b2" class="bundle-opt"></select><span class="override-link" onclick="toggleOverride('es-b2')">OVERRIDE</span></div>
         <div class="input-group" id="es-f2-group"><select id="es-f2" class="fiber-opt"></select><span class="override-link" onclick="toggleOverride('es-f2')">OVERRIDE</span></div>
 
@@ -255,7 +299,30 @@
     let editingLocId = null;
     let editingSpliceId = null;
     let editingSpliceLocId = null;
+    let managingCablesLocId = null;
     const colors = { "BLUE": "#0000FF", "ORANGE": "#FFA500", "GREEN": "#008000", "BROWN": "#8B4513", "SLATE": "#808080", "WHITE": "#FFFFFF", "RED": "#FF0000", "BLACK": "#000000", "YELLOW": "#FFFF00", "VIOLET": "#EE82EE", "ROSE": "#FFC0CB", "AQUA": "#00FFFF" };
+
+    // Auto-save to localStorage every 30 seconds
+    setInterval(() => {
+        localStorage.setItem('FMPsession', JSON.stringify(savedData));
+        const now = new Date();
+        const timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('autosave-status').textContent = `Auto-saved at ${timeStr}`;
+    }, 30000);
+
+    // Auto-restore from localStorage on page load
+    window.addEventListener('load', () => {
+        const cached = localStorage.getItem('FMPsession');
+        if (cached) {
+            try {
+                savedData = JSON.parse(cached);
+                updateUI();
+                console.log('Session restored from local storage');
+            } catch (e) {
+                console.error('Failed to restore session:', e);
+            }
+        }
+    });
 
     function toggleTheme() {
         const body = document.body;
@@ -277,10 +344,20 @@
         document.querySelectorAll('.fiber-opt').forEach(s => s.innerHTML = '<option value="">Select Fiber...</option>' + Object.keys(colors).map(c => `<option value="${c}">${c}</option>`).join(''));
     }
 
+    function populateCableOptions(locId) {
+        const loc = savedData.find(l => l.id === locId);
+        if (!loc) return;
+        
+        const cables = loc.cableDevices || [];
+        const optionHtml = '<option value="">Select Cable/Device...</option>' + cables.map(c => `<option value="${c}">${c}</option>`).join('');
+        
+        document.querySelectorAll('.cable-opt').forEach(s => s.innerHTML = optionHtml);
+    }
+
     function toggleOverride(id) {
         const group = document.getElementById(id + '-group');
         if (group.querySelector('input')) {
-            group.innerHTML = `<select id="${id}" class="${id.startsWith('b') ? 'bundle-opt' : 'fiber-opt'}"></select><span class="override-link" onclick="toggleOverride('${id}')">OVERRIDE</span>`;
+            group.innerHTML = `<select id="${id}" class="${id.startsWith('b') || id.startsWith('es-b') ? 'bundle-opt' : 'fiber-opt'}"></select><span class="override-link" onclick="toggleOverride('${id}')">OVERRIDE</span>`;
             initOptions();
         } else {
             group.innerHTML = `<input type="text" id="${id}" placeholder="Manual Entry"><span class="override-link" onclick="toggleOverride('${id}')">BACK</span>`;
@@ -291,12 +368,10 @@
         const name = prompt("Location Name:");
         if (!name) return;
         
-        // Create location immediately with placeholder coordinates
-        const loc = { id: Date.now(), name, lat: "0.00000", lon: "0.00000", splices: [] };
+        const loc = { id: Date.now(), name, lat: "0.00000", lon: "0.00000", splices: [], cableDevices: [] };
         savedData.push(loc);
         updateUI();
         
-        // Try to get GPS, update coordinates if successful
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 loc.lat = pos.coords.latitude.toFixed(5);
@@ -305,18 +380,93 @@
             }, 
             (err) => {
                 // GPS failed - location already exists with placeholder coords
-                // Silently let user edit if needed
             }, 
             { enableHighAccuracy: true }
         );
-        
-        openSpliceModal(loc.id);
     }
 
-    function openSpliceModal(id) { 
+    function openCableModal(locId) {
+        managingCablesLocId = locId;
+        const loc = savedData.find(l => l.id === locId);
+        document.getElementById('cable-input').value = '';
+        displayCurrentCables(locId);
+        document.getElementById('cable-modal').classList.add('open');
+    }
+
+    function closeCableModal() {
+        document.getElementById('cable-modal').classList.remove('open');
+        managingCablesLocId = null;
+    }
+
+    function displayCurrentCables(locId) {
+        const loc = savedData.find(l => l.id === locId);
+        const cables = loc.cableDevices || [];
+        const html = cables.map((cable, idx) => `
+            <div class="cable-item">
+                <span class="cable-item-name">${cable}</span>
+                <button class="cable-item-delete" onclick="deleteCable(${locId}, ${idx})">Delete</button>
+            </div>
+        `).join('');
+        document.getElementById('cable-list-display').innerHTML = html || '<p style="color:#666;text-align:center;padding:10px;">No devices added yet</p>';
+    }
+
+    function deleteCable(locId, idx) {
+        const loc = savedData.find(l => l.id === locId);
+        loc.cableDevices.splice(idx, 1);
+        displayCurrentCables(locId);
+        if (document.getElementById('modal').classList.contains('open')) {
+            populateCableOptions(locId);
+        }
+        if (document.getElementById('edit-splice-modal').classList.contains('open')) {
+            populateCableOptions(locId);
+        }
+    }
+
+    function addCablesToLocation() {
+        const input = document.getElementById('cable-input').value.trim();
+        if (!input) {
+            alert("Please enter at least one item.");
+            return;
+        }
+
+        const loc = savedData.find(l => l.id === managingCablesLocId);
+        const separator = input.includes(',') ? ',' : '\n';
+        const newCables = input.split(separator).map(c => c.trim()).filter(c => c !== '');
+        
+        loc.cableDevices = [...new Set([...loc.cableDevices, ...newCables])]; // Avoid duplicates
+        
+        displayCurrentCables(managingCablesLocId);
+        document.getElementById('cable-input').value = '';
+        
+        // Refresh dropdowns if splice modal is open
+        if (document.getElementById('modal').classList.contains('open')) {
+            populateCableOptions(managingCablesLocId);
+        }
+        if (document.getElementById('edit-splice-modal').classList.contains('open')) {
+            populateCableOptions(managingCablesLocId);
+        }
+    }
+
+    function openSpliceModal(id) {
+        const loc = savedData.find(l => l.id === id);
+        
+        // Check if location has no cables
+        if (!loc.cableDevices || loc.cableDevices.length === 0) {
+            openCableModal(id);
+            // After cable modal closes, we'll reopen splice modal
+            const checkForSpice = setInterval(() => {
+                if (!document.getElementById('cable-modal').classList.contains('open')) {
+                    clearInterval(checkForSpice);
+                    openSpliceModal(id); // Retry splice modal
+                }
+            }, 100);
+            return;
+        }
+        
         currentLocId = id; 
+        populateCableOptions(id);
         document.getElementById('modal').classList.add('open');
-        document.querySelectorAll('#modal input').forEach(i => i.value = '');
+        document.querySelectorAll('#modal input[type="text"]').forEach(i => i.value = '');
     }
 
     function closeModal() { 
@@ -339,54 +489,6 @@
         if(confirm("Delete row?")) {
             const loc = savedData.find(l => l.id === locId);
             loc.splices = loc.splices.filter(s => s.id !== spliceId);
-            updateUI();
-        }
-    }
-
-    function openEditSpliceModal(locId, spliceId) {
-        const loc = savedData.find(l => l.id === locId);
-        const splice = loc.splices.find(s => s.id === spliceId);
-        if (!splice) return;
-        
-        editingSpliceLocId = locId;
-        editingSpliceId = spliceId;
-        
-        document.getElementById('es-id1').value = splice.id1;
-        document.getElementById('es-b1').value = splice.b1;
-        document.getElementById('es-f1').value = splice.f1;
-        document.getElementById('es-id2').value = splice.id2;
-        document.getElementById('es-b2').value = splice.b2;
-        document.getElementById('es-f2').value = splice.f2;
-        document.getElementById('es-notes').value = splice.notes;
-        
-        document.getElementById('edit-splice-modal').classList.add('open');
-    }
-
-    function closeEditSpliceModal() {
-        document.getElementById('edit-splice-modal').classList.remove('open');
-        editingSpliceId = null;
-        editingSpliceLocId = null;
-    }
-
-    function commitEditSplice() {
-        const loc = savedData.find(l => l.id === editingSpliceLocId);
-        const splice = loc.splices.find(s => s.id === editingSpliceId);
-        
-        splice.id1 = document.getElementById('es-id1').value;
-        splice.b1 = document.getElementById('es-b1').value;
-        splice.f1 = document.getElementById('es-f1').value;
-        splice.id2 = document.getElementById('es-id2').value;
-        splice.b2 = document.getElementById('es-b2').value;
-        splice.f2 = document.getElementById('es-f2').value;
-        splice.notes = document.getElementById('es-notes').value;
-        
-        closeEditSpliceModal();
-        updateUI();
-    }
-
-    function deleteLocation(locId) {
-        if (confirm("Delete this location and all its splices?")) {
-            savedData = savedData.filter(l => l.id !== locId);
             updateUI();
         }
     }
@@ -429,12 +531,61 @@
         updateUI();
     }
 
+    function openEditSpliceModal(locId, spliceId) {
+        const loc = savedData.find(l => l.id === locId);
+        const splice = loc.splices.find(s => s.id === spliceId);
+        if (!splice) return;
+        
+        editingSpliceLocId = locId;
+        editingSpliceId = spliceId;
+        
+        populateCableOptions(locId);
+        
+        document.getElementById('es-id1').value = splice.id1;
+        document.getElementById('es-b1').value = splice.b1;
+        document.getElementById('es-f1').value = splice.f1;
+        document.getElementById('es-id2').value = splice.id2;
+        document.getElementById('es-b2').value = splice.b2;
+        document.getElementById('es-f2').value = splice.f2;
+        document.getElementById('es-notes').value = splice.notes;
+        
+        document.getElementById('edit-splice-modal').classList.add('open');
+    }
+
+    function closeEditSpliceModal() {
+        document.getElementById('edit-splice-modal').classList.remove('open');
+        editingSpliceId = null;
+        editingSpliceLocId = null;
+    }
+
+    function commitEditSplice() {
+        const loc = savedData.find(l => l.id === editingSpliceLocId);
+        const splice = loc.splices.find(s => s.id === editingSpliceId);
+        
+        splice.id1 = document.getElementById('es-id1').value;
+        splice.b1 = document.getElementById('es-b1').value;
+        splice.f1 = document.getElementById('es-f1').value;
+        splice.id2 = document.getElementById('es-id2').value;
+        splice.b2 = document.getElementById('es-b2').value;
+        splice.f2 = document.getElementById('es-f2').value;
+        splice.notes = document.getElementById('es-notes').value;
+        
+        closeEditSpliceModal();
+        updateUI();
+    }
+
+    function deleteLocation(locId) {
+        if (confirm("Delete this location and all its splices?")) {
+            savedData = savedData.filter(l => l.id !== locId);
+            updateUI();
+        }
+    }
+
     function getSwatchHTML(name, label) {
         const isS = name && name.includes("-STRIPE");
         const hex = colors[name ? name.replace("-STRIPE", "") : ""] || "#eee";
         const style = name ? `background:${hex}` : `background:#444; border-style:dashed;`;
         
-        // If it's a manual override (text that doesn't match known colors), show text instead of swatch
         const isManualOverride = name && !colors[name.replace("-STRIPE", "")] && name !== "";
         
         if (isManualOverride) {
@@ -462,6 +613,7 @@
                         </div>
                     </div>
                     <div style="display:flex;gap:4px;flex-direction:column;">
+                        <button class="loc-cable-btn" onclick="openCableModal(${loc.id})">🔌 Cables/Devices</button>
                         <button class="loc-add-btn" onclick="openSpliceModal(${loc.id})">+ Add Splice</button>
                         <button style="min-height:30px; padding:0 8px; font-size:10px; background:var(--danger); color:white; border:none; border-radius:6px; cursor:pointer;" onclick="deleteLocation(${loc.id})">🗑️ Delete</button>
                     </div>
@@ -470,7 +622,6 @@
                     <div class="splice-row">
                         <button class="btn-del-row" onclick="deleteSplice(${loc.id}, ${s.id})">×</button>
                         <div class="splice-grid">
-                            <!-- SIDE 1 Centered -->
                             <div class="splice-side">
                                 <div class="swatch-pair">${getSwatchHTML(s.b1,'BNDL')}${getSwatchHTML(s.f1,'FIBR')}</div>
                                 <div><b>ID:</b> ${s.id1 || 'N/A'}</div>
@@ -478,7 +629,6 @@
                             
                             <div class="center-sep">&lt;&gt;</div>
                             
-                            <!-- SIDE 2 Centered -->
                             <div class="splice-side">
                                 <div class="swatch-pair">${getSwatchHTML(s.b2,'BNDL')}${getSwatchHTML(s.f2,'FIBR')}</div>
                                 <div><b>ID:</b> ${s.id2 || 'N/A'}</div>
@@ -493,7 +643,6 @@
     }
 
     function exportAllCSVsAsZip() {
-        // Check if JSZip is available, if not load it
         if (typeof JSZip === 'undefined') {
             const script = document.createElement('script');
             script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
@@ -544,6 +693,7 @@
         reader.onload = (ev) => { 
             try { 
                 savedData = JSON.parse(ev.target.result); 
+                localStorage.setItem('FMPsession', JSON.stringify(savedData));
                 updateUI();
                 alert("File loaded successfully!");
             } catch(err) { 
@@ -552,6 +702,21 @@
         };
         reader.onerror = () => alert("Could not read file.");
         reader.readAsText(file);
+    }
+
+    function confirmClearAll() {
+        const confirmed = confirm("⚠️ WARNING ⚠️\n\nThis will permanently delete all current session data.\n\nLocations, splices, and cables/devices will be IRRETRIEVABLY LOST.\n\nThis action CANNOT be undone.\n\nAre you absolutely sure?");
+        
+        if (confirmed) {
+            const doubleConfirmed = confirm("This is your FINAL WARNING.\n\nClick OK to permanently clear all data, or Cancel to keep your session.");
+            
+            if (doubleConfirmed) {
+                savedData = [];
+                localStorage.removeItem('FMPsession');
+                updateUI();
+                alert("✓ Session cleared. All data has been deleted.");
+            }
+        }
     }
 
     initOptions();
