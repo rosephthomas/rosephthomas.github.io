@@ -111,8 +111,8 @@
 <div class="app-container">
     <div class="controls">
         <button class="btn-main" onclick="getLocation()">📍 Record New Location</button>
-        <button style="background: var(--success); color: white;" onclick="saveToFile()">💾 JSON Save</button>
-        <button style="background: #777; color: white;" onclick="document.getElementById('loadInput').click()">📂 Load JSON</button>
+        <button style="background: var(--success); color: white;" onclick="saveToFile()">💾 Save</button>
+        <button style="background: #777; color: white;" onclick="document.getElementById('loadInput').click()">📂 Load</button>
         <button style="background: var(--dark); color: white; grid-column: span 2;" onclick="exportAllCSVs()">📊 Export Excel CSVs</button>
         <input type="file" id="loadInput" style="display:none" accept=".json" onchange="loadFromFile(event)">
     </div>
