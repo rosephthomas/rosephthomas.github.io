@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>Fiber Stick Map</title>
+<title>Rich Network Mapper</title>
 <style>
 :root {
   --bg:#bdbdbd; --ui:#c0c0c0; --ui-border:#808080; --ui-text:#000;
@@ -94,7 +94,8 @@ canvas { display:block; touch-action:none; }
   <span class="bar-label">FILE</span>
   <button onclick="exportJSON()">💾 Export</button>
   <button onclick="importJSON()">📂 Load</button>
-  <button onclick="exportPNG()">🖼 PNG</button>
+      <button onclick="exportPNG()">🖼 PNG</button>
+    <button onclick="exportKML()">🌍 KML</button>
   <button onclick="showHelp()">❓ Help</button>
   <button onclick="clearAll()" style="background:#8a2020;border-color:#5a1a1a;color:#fff;">🗑 Clear</button>
   <div class="tb-sep"></div>
@@ -104,6 +105,8 @@ canvas { display:block; touch-action:none; }
     <option value="dark">🌙 Dark</option>
     <option value="light">☀️ Light</option>
   </select>
+  <div class="tb-sep"></div>
+  <span id="build-stamp" style="font-size:10px;color:var(--bar-label);white-space:nowrap;margin-left:auto;padding-right:4px;">NSM v1.0.0 · 03-15-2026</span>
 </div>
 
 <div id="bar-format">
@@ -118,7 +121,7 @@ canvas { display:block; touch-action:none; }
   </select>
   <div class="tb-sep"></div>
   <span class="bar-label">LINK</span>
-  <input type="color" id="link-color" value="#ffffff" title="Link color"/>
+  <input type="color" id="link-color" value="#8000ff" title="Link color"/>
   <select id="link-style">
     <option value="solid">Solid</option>
     <option value="dashed">Dashed</option>
@@ -184,6 +187,8 @@ canvas { display:block; touch-action:none; }
         <option value="house">Hub</option>
       </select>
     </div>
+    <div class="pe-row"><label>Lat</label><input type="text" id="pe-lat" placeholder="e.g. 35.123456" style="width:100%;"/></div>
+    <div class="pe-row"><label>Lon</label><input type="text" id="pe-lon" placeholder="e.g. -80.123456" style="width:100%;"/></div>
   </div>
   <div id="pe-link-fields">
     <div class="pe-row"><label>Label</label><input type="text" id="pe-label" placeholder="e.g. 1200ft / 12F"/></div>
@@ -424,7 +429,9 @@ cvs.addEventListener('mousemove',e=>{
   }
   if(dragging&&mode==='move'){
     const {x:wx,y:wy}=toWorld(x,y);
-    dragging.x=wx-dragOX; dragging.y=wy-dragOY; draw(); return;
+    dragging.x=wx-dragOX; dragging.y=wy-dragOY;
+    clearWaypoints();
+    draw(); return;
   }
   const {x:wx,y:wy}=toWorld(x,y);
   const pH=hoverNode, pL=hoverLink;
@@ -498,6 +505,8 @@ function openPopup(type,obj,cx,cy){
     document.getElementById('pe-name').value=obj.name;
     document.getElementById('pe-color').value=obj.color;
     document.getElementById('pe-shape').value=obj.shape;
+    document.getElementById('pe-lat').value=obj.lat||'';
+    document.getElementById('pe-lon').value=obj.lon||'';
   } else {
     document.getElementById('pe-label').value=obj.label||'';
     document.getElementById('pe-lcolor').value=obj.color||'#ffffff';
@@ -518,6 +527,10 @@ function savePopup(){
     if(nm) obj.name=nm;
     obj.color=document.getElementById('pe-color').value;
     obj.shape=document.getElementById('pe-shape').value;
+    const latVal=parseFloat(document.getElementById('pe-lat').value);
+    const lonVal=parseFloat(document.getElementById('pe-lon').value);
+    obj.lat=isNaN(latVal)?undefined:latVal;
+    obj.lon=isNaN(lonVal)?undefined:lonVal;
   } else {
     obj.label=document.getElementById('pe-label').value.trim();
     obj.color=document.getElementById('pe-lcolor').value;
@@ -570,20 +583,36 @@ function drawScene(tc,W,H,transparent,offPanX,offPanY){
   tc.save(); tc.translate(ox,oy);
 
   links.forEach(l=>{
-    const a=nodes.find(n=>n.id===l.a),b=nodes.find(n=>n.id===l.b);
+    const a=nodes.find(n=>n.id===l.a), b=nodes.find(n=>n.id===l.b);
     if(!a||!b) return;
     const hot=!transparent&&hoverLink&&hoverLink.id===l.id;
     const hotColor=isLight||isMine?'#cc0000':'#ffff00';
-    tc.beginPath();
-    tc.strokeStyle=hot?hotColor:(l.color||'#fff');
-    tc.lineWidth=hot?3:2;
-    if(l.style==='dashed') tc.setLineDash([10,5]);
-    else if(l.style==='dotted') tc.setLineDash([3,5]);
-    else tc.setLineDash([]);
-    tc.moveTo(a.x,a.y);tc.lineTo(b.x,b.y);tc.stroke();tc.setLineDash([]);
+    const lineColor=hot?hotColor:(l.color||'#8000ff');
+    const lineWidth=hot?3:2;
+    const lineDash=l.style||'solid';
+
+    const wpts=l.waypoints&&l.waypoints.length?l.waypoints:[];
+    const hops=l.hops||[];
+    const allPts=[{x:a.x,y:a.y},...wpts,{x:b.x,y:b.y}];
+
+    for(let si=0;si<allPts.length-1;si++){
+      drawSegmentWithHops(tc, allPts[si], allPts[si+1], si, hops, lineColor, lineWidth, lineDash);
+    }
+
     if(l.label){
-      const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
-      let ang=Math.atan2(b.y-a.y,b.x-a.x);
+      const totalLen=allPts.reduce((s,p,i)=>i===0?0:s+Math.hypot(p.x-allPts[i-1].x,p.y-allPts[i-1].y),0);
+      let target=totalLen/2, walked=0, mx=a.x, my=a.y, ang=0;
+      for(let i=1;i<allPts.length;i++){
+        const sLen=Math.hypot(allPts[i].x-allPts[i-1].x,allPts[i].y-allPts[i-1].y);
+        if(walked+sLen>=target){
+          const t2=(target-walked)/sLen;
+          mx=allPts[i-1].x+(allPts[i].x-allPts[i-1].x)*t2;
+          my=allPts[i-1].y+(allPts[i].y-allPts[i-1].y)*t2;
+          ang=Math.atan2(allPts[i].y-allPts[i-1].y,allPts[i].x-allPts[i-1].x);
+          break;
+        }
+        walked+=sLen;
+      }
       if(Math.abs(ang)>Math.PI/2) ang+=Math.PI;
       tc.save();tc.translate(mx,my);tc.rotate(ang);
       tc.font=isMine?'bold 11px "Courier New"':'bold 11px Arial';
@@ -697,6 +726,8 @@ function autoLayout(){
   if(allDeg2&&Object.keys(bfs(nodes[0].id)).length===nodes.length){
     const r=Math.min(W,H)*0.38;
     nodes.forEach((n,i)=>{const a=(2*Math.PI*i/nodes.length)-Math.PI/2;n.x=cx+r*Math.cos(a)-panX;n.y=cy+r*Math.sin(a)-panY;});
+    displaceConflictingNodes();
+    computeWaypoints();
     draw();return;
   }
   const root=nodes.reduce((b,n)=>adj[n.id].length>adj[b.id].length?n:b,nodes[0]);
@@ -715,6 +746,8 @@ function autoLayout(){
   }
   const pos2=new Set(order);
   nodes.filter(n=>!pos2.has(n.id)).forEach((n,i)=>{n.x=padX+i*100-panX;n.y=H-50-panY;});
+  displaceConflictingNodes();
+  computeWaypoints();
   draw();
 }
 
@@ -822,7 +855,12 @@ code{background:#0f3460;padding:1px 6px;border-radius:3px;font-family:monospace;
 <li><b>💾 Export</b> — Save as <code>.json</code>. Chrome desktop shows Save As dialog; Android saves to Downloads.</li>
 <li><b>📂 Load</b> — Open a saved <code>.json</code> map file.</li>
 <li><b>🖼 PNG</b> — Export canvas as image, with or without background.</li>
+<li><b>🌍 KML</b> — Export map as a KML file for Google Earth Pro or any GIS tool. Nodes become Placemarks and links become LineStrings. Only sites with GPS coordinates are included. Sites missing coordinates are listed before export so you can decide whether to proceed.</li>
 <li><b>🗑 Clear</b> — Wipe canvas after confirmation.</li></ul>
+<h2>GPS Coordinates</h2>
+<p>Open any site in <b>✏️ Edit</b> mode to enter Lat and Lon values. Use decimal degrees to the nearest hundred-thousandth for best accuracy — no more, no less:</p>
+<div class="ex">Lat: 35.12345<br>Lon: -80.12345</div>
+<p>Avoid DMS (degrees/minutes/seconds) format — decimal degrees only. Negative longitude = West. Negative latitude = South. Coordinates are saved with your <code>.json</code> export and used by the KML export.</p>
 <div class="wrap"><button class="cb" onclick="window.close()">✕ Close Help</button></div>
 </body></html>`;
   const blob=new Blob([html],{type:'text/html'});
@@ -836,6 +874,242 @@ code{background:#0f3460;padding:1px 6px;border-radius:3px;font-family:monospace;
     if(btn) btn.onclick=()=>document.body.removeChild(ov);
   }
   setTimeout(()=>URL.revokeObjectURL(url),5000);
+}
+
+// ── Edge routing (line-line hop arcs only, no node obstacle routing) ─
+const HOP_R = 9;
+
+function segIntersect(ax,ay,bx,by,cx,cy,dx,dy){
+  const rx=bx-ax, ry=by-ay, sx=dx-cx, sy=dy-cy;
+  const denom=rx*sy-ry*sx;
+  if(Math.abs(denom)<1e-9) return null;
+  const t=((cx-ax)*sy-(cy-ay)*sx)/denom;
+  const u=((cx-ax)*ry-(cy-ay)*rx)/denom;
+  if(t>0.02&&t<0.98&&u>0.02&&u<0.98)
+    return{x:ax+t*rx, y:ay+t*ry, t, u};
+  return null;
+}
+
+function distPointToSegment(px,py,ax,ay,bx,by){
+  const dx=bx-ax, dy=by-ay, len2=dx*dx+dy*dy;
+  if(len2===0) return Math.hypot(px-ax,py-ay);
+  const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/len2));
+  return Math.hypot(px-(ax+t*dx), py-(ay+t*dy));
+}
+
+function trunkScore(l){
+  return links.filter(x=>x.a===l.a||x.b===l.a).length
+       + links.filter(x=>x.a===l.b||x.b===l.b).length;
+}
+
+// ── Node displacement: nudge nodes off lines they don't belong to ──
+const NUDGE_CLEARANCE = 36; // desired clearance between node center and any non-connected line
+const NUDGE_ITERS     = 40; // max relaxation passes
+
+function displaceConflictingNodes(){
+  for(let iter=0; iter<NUDGE_ITERS; iter++){
+    let moved = false;
+    nodes.forEach(n=>{
+      links.forEach(l=>{
+        // Skip links connected to this node
+        if(l.a===n.id||l.b===n.id) return;
+        const a=nodes.find(x=>x.id===l.a), b=nodes.find(x=>x.id===l.b);
+        if(!a||!b) return;
+
+        const dx=b.x-a.x, dy=b.y-a.y;
+        const len2=dx*dx+dy*dy;
+        if(len2<1) return;
+        const t=Math.max(0,Math.min(1,((n.x-a.x)*dx+(n.y-a.y)*dy)/len2));
+        const footX=a.x+t*dx, footY=a.y+t*dy;
+        const dist=Math.hypot(n.x-footX, n.y-footY);
+
+        if(dist < NUDGE_CLEARANCE){
+          // Perpendicular unit vector away from line
+          const needed = NUDGE_CLEARANCE - dist + 1;
+          let nx, ny;
+          if(dist < 0.5){
+            // Exactly on line — pick perpendicular direction
+            const len=Math.hypot(dx,dy)||1;
+            nx = -dy/len; ny = dx/len;
+          } else {
+            nx = (n.x-footX)/dist; ny = (n.y-footY)/dist;
+          }
+          n.x += nx * needed;
+          n.y += ny * needed;
+          moved = true;
+        }
+      });
+    });
+    if(!moved) break;
+  }
+}
+
+function computeWaypoints(){
+  links.forEach(l=>{ l.waypoints=[]; l.hops=[]; });
+
+  // Line-line crossings — non-trunk gets hop arc
+  for(let i=0;i<links.length;i++){
+    for(let j=i+1;j<links.length;j++){
+      const li=links[i], lj=links[j];
+      if(li.a===lj.a||li.a===lj.b||li.b===lj.a||li.b===lj.b) continue;
+      const ai=nodes.find(n=>n.id===li.a), bi=nodes.find(n=>n.id===li.b);
+      const aj=nodes.find(n=>n.id===lj.a), bj=nodes.find(n=>n.id===lj.b);
+      if(!ai||!bi||!aj||!bj) continue;
+      const ix=segIntersect(ai.x,ai.y,bi.x,bi.y,aj.x,aj.y,bj.x,bj.y);
+      if(!ix) continue;
+      const hopper = trunkScore(li)>=trunkScore(lj) ? lj : li;
+      const hp0 = hopper===lj ? aj : ai;
+      const hp1 = hopper===lj ? bj : bi;
+      const hSegLen=Math.hypot(hp1.x-hp0.x,hp1.y-hp0.y)||1;
+      const ht=((ix.x-hp0.x)*(hp1.x-hp0.x)+(ix.y-hp0.y)*(hp1.y-hp0.y))/(hSegLen*hSegLen);
+      hopper.hops.push({ seg:0, t:ht, x:ix.x, y:ix.y });
+    }
+  }
+}
+
+function clearWaypoints(){
+  links.forEach(l=>{ l.waypoints=[]; l.hops=[]; });
+}
+
+function drawSegmentWithHops(tc,p0,p1,segIdx,hops,lineColor,lineWidth,lineDash){
+  const dx=p1.x-p0.x, dy=p1.y-p0.y;
+  const segLen=Math.hypot(dx,dy)||1;
+  const angle=Math.atan2(dy,dx);
+
+  const myHops=hops
+    .filter(h=>h.seg===segIdx && h.t>HOP_R/segLen && h.t<1-HOP_R/segLen)
+    .sort((a,b)=>a.t-b.t);
+
+  tc.save();
+  tc.translate(p0.x,p0.y);
+  tc.rotate(angle);
+  tc.strokeStyle=lineColor;
+  tc.lineWidth=lineWidth;
+
+  const setDash=()=>{
+    if(lineDash==='dashed') tc.setLineDash([10,5]);
+    else if(lineDash==='dotted') tc.setLineDash([3,5]);
+    else tc.setLineDash([]);
+  };
+  setDash();
+
+  let curX=0;
+  myHops.forEach(h=>{
+    const hopX=h.t*segLen;
+    const entryX=hopX-HOP_R, exitX=hopX+HOP_R;
+    tc.beginPath(); tc.moveTo(curX,0); tc.lineTo(entryX,0); tc.stroke();
+    tc.beginPath(); tc.setLineDash([]);
+    tc.arc(hopX, 0, HOP_R, Math.PI, 0, true);
+    tc.stroke();
+    setDash();
+    curX=exitX;
+  });
+  tc.beginPath(); tc.moveTo(curX,0); tc.lineTo(segLen,0); tc.stroke();
+  tc.setLineDash([]);
+  tc.restore();
+}
+function exportKML(){
+  // Check for nodes missing coords
+  const missing = nodes.filter(n => n.lat === undefined || n.lon === undefined);
+  if(missing.length){
+    const names = missing.map(n => `  • ${n.name}`).join('\n');
+    const proceed = confirm(
+      `${missing.length} site(s) have no GPS coordinates and will be skipped:\n\n${names}\n\nProceed with export anyway?`
+    );
+    if(!proceed) return;
+  }
+
+  const coordNodes = nodes.filter(n => n.lat !== undefined && n.lon !== undefined);
+  if(!coordNodes.length){
+    alert('No sites have GPS coordinates. Add lat/lon to sites via Edit mode first.');
+    return;
+  }
+
+  // Helper: hex color → KML aabbggrr format (KML uses ABGR not ARGB)
+  function hexToKmlColor(hex){
+    const r=hex.slice(1,3), g=hex.slice(3,5), b=hex.slice(5,7);
+    return `ff${b}${g}${r}`;
+  }
+
+  // Build node id lookup
+  const nodeById = {};
+  nodes.forEach(n => nodeById[n.id] = n);
+
+  let placemarks = '';
+
+  // Nodes as Placemarks
+  coordNodes.forEach(n => {
+    const kmlColor = hexToKmlColor(n.color || '#00d4ff');
+    placemarks += `
+  <Placemark>
+    <name>${escXml(n.name)}</name>
+    <description>Shape: ${n.shape}</description>
+    <Style>
+      <IconStyle>
+        <color>${kmlColor}</color>
+        <scale>1.1</scale>
+        <Icon><href>http://maps.google.com/mapfiles/kml/paddle/wht-blank.png</href></Icon>
+      </IconStyle>
+      <LabelStyle>
+        <color>${kmlColor}</color>
+        <scale>0.9</scale>
+      </LabelStyle>
+    </Style>
+    <Point>
+      <coordinates>${n.lon},${n.lat},0</coordinates>
+    </Point>
+  </Placemark>`;
+  });
+
+  // Links as LineStrings — only if both endpoints have coords
+  links.forEach(l => {
+    const a = nodeById[l.a], b = nodeById[l.b];
+    if(!a || !b) return;
+    if(a.lat === undefined || b.lat === undefined) return;
+    const desc = l.label ? escXml(l.label) : '';
+    const kmlColor = hexToKmlColor(l.color || '#ffffff');
+    const dashPattern = l.style === 'dashed' ? `
+      <gx:outerColor>00000000</gx:outerColor>` : '';
+    placemarks += `
+  <Placemark>
+    <name>${escXml(a.name)} → ${escXml(b.name)}</name>
+    <description>${desc}</description>
+    <Style>
+      <LineStyle>
+        <color>${kmlColor}</color>
+        <width>${l.style === 'dotted' ? 1 : 2}</width>${dashPattern}
+      </LineStyle>
+    </Style>
+    <LineString>
+      <tessellate>1</tessellate>
+      <coordinates>${a.lon},${a.lat},0 ${b.lon},${b.lat},0</coordinates>
+    </LineString>
+  </Placemark>`;
+  });
+
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+  <Document>
+    <name>Fiber Stick Map</name>
+    <description>Exported from NetworkStickMapper</description>
+${placemarks}
+  </Document>
+</kml>`;
+
+  const blob = new Blob([kml], {type:'application/vnd.google-earth.kml+xml'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'stickmap.kml';
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+}
+
+function escXml(s){
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
 }
 
 // ── Init ──────────────────────────────────────────────────────────
