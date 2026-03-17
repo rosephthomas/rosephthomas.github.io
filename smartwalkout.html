@@ -7,13 +7,12 @@
 
   <style>
     :root {
-      /* Master Palette */
-      --safety-amber: #E9C137;      /* "Pop" color / Primary buttons */
-      --deep-slate: #3A4B5D;        /* Primary background */
-      --charcoal-mesh: #424950;     /* Secondary/card background */
-      --industrial-blue: #2D5B80;   /* Secondary buttons / active states */
-      --reflective-silver: #D1D3D4; /* Helper/neutral text */
-      --main-font-dark: #2D3539;    /* Near-black for text on amber */
+      --safety-amber: #E9C137;
+      --deep-slate: #3A4B5D;
+      --charcoal-mesh: #424950;
+      --industrial-blue: #2D5B80;
+      --reflective-silver: #D1D3D4;
+      --main-font-dark: #2D3539;
     }
 
     * {
@@ -83,21 +82,18 @@
       white-space: nowrap;
     }
 
-    /* Primary action (Safety Amber) */
     button.primary {
       background-color: var(--safety-amber);
       color: var(--main-font-dark);
       font-weight: 600;
     }
 
-    /* Secondary action (Industrial Blue) */
     button.secondary {
       background-color: var(--industrial-blue);
       color: #ffffff;
       font-weight: 500;
     }
 
-    /* Destructive action */
     button.danger {
       background: linear-gradient(90deg, #7a1b20, #b0242b, #ff3b3b);
       color: #ffffff;
@@ -168,7 +164,6 @@
       display: block;
     }
 
-    /* Auto-save indicator (top-right) */
     #autosaveIndicator {
       position: fixed;
       top: 6px;
@@ -197,7 +192,6 @@
       white-space: nowrap;
     }
 
-    /* Warning icons and clear-session button */
     #clearSessionContainer {
       display: flex;
       justify-content: center;
@@ -239,7 +233,6 @@
       letter-spacing: 0.03em;
     }
 
-    /* Link modal & help overlay */
     #linkModalOverlay,
     #helpOverlay {
       position: fixed;
@@ -300,7 +293,6 @@
       margin-top: 10px;
     }
 
-    /* Floating Help button */
     #helpButton {
       position: fixed;
       bottom: 12px;
@@ -337,41 +329,40 @@
 </head>
 <body>
 
-  <!-- Auto-save indicator (top right) -->
   <div id="autosaveIndicator">
     <div id="autosaveIndicatorDot"></div>
     <div id="autosaveIndicatorText">Unsaved changes</div>
   </div>
 
-  <!-- Floating Help button (bottom right) -->
   <button id="helpButton" type="button">Help</button>
 
   <h1>Smart Walkout</h1>
 
-  <!-- PROJECT + GPS CARD -->
   <div class="card">
     <h2>Record Current Location</h2>
 
-    <!-- Project ID / Name used for KML naming and saved in localStorage -->
     <label for="projectName">Project ID / Name</label>
     <input type="text" id="projectName" placeholder="e.g., Smart Walkout – Job 1234">
 
-    <!-- Name for the next recorded GPS point -->
     <label for="pointName">Location Name</label>
     <input type="text" id="pointName" placeholder="e.g., Site A">
 
     <div style="margin-top: 8px;">
-      <!-- Primary action: record current GPS -->
       <button class="primary" id="recordBtn" type="button">Record Current GPS</button>
       <span id="status"></span>
     </div>
 
+    <div style="margin-top: 8px;">
+      <button class="secondary" id="startTrackBtn" type="button">Start Track</button>
+      <button class="secondary" id="stopTrackBtn" type="button" disabled>Stop Track</button>
+    </div>
+
     <p class="small-text">
       Browser will prompt for location access. You can edit point names and coordinates directly in the table below.
+      When tracking, a polyline will be recorded along your path, with vertices spaced at least ~0.0001° apart.
     </p>
   </div>
 
-  <!-- POINTS TABLE CARD -->
   <div class="card">
     <h2>Points (Editable)</h2>
     <table id="pointsTable">
@@ -388,29 +379,28 @@
     </table>
   </div>
 
-  <!-- CANVAS CARD -->
   <div class="card">
     <h2>Canvas View (Tap to Connect Points)</h2>
     <p class="small-text">
       Tap one point, then another to propose a connection. A dialog will appear:
       enter an optional name and confirm to create the line, or cancel to abort.
       Estimated distance (feet) will be stored on the line and shown on the canvas.
+      Tracks recorded with Start/Stop Track appear as polylines.
     </p>
     <div id="canvasContainer">
       <canvas id="mapCanvas"></canvas>
     </div>
   </div>
 
-  <!-- LINKS TABLE CARD -->
   <div class="card">
-    <h2>Links (Created via Canvas)</h2>
+    <h2>Links (Created via Canvas & Tracking)</h2>
     <table id="linksTable">
       <thead>
         <tr>
           <th>#</th>
           <th>Name</th>
-          <th>From</th>
-          <th>To</th>
+          <th>From / Type</th>
+          <th>To / Info</th>
           <th>Distance (ft)</th>
           <th>Actions</th>
         </tr>
@@ -419,13 +409,10 @@
     </table>
   </div>
 
-  <!-- EXPORT / SESSION CARD -->
   <div class="card">
     <h2>Export &amp; Session</h2>
-    <!-- KML export for Google Earth -->
     <button class="secondary" id="exportBtn" type="button">Export to .kml</button>
 
-    <!-- Clear all local data and start fresh -->
     <div id="clearSessionContainer">
       <span class="warning-icon"></span>
       <button id="clearSessionBtn" type="button">Clear Session</button>
@@ -433,12 +420,11 @@
     </div>
 
     <p class="small-text">
-      Export will include all current points and links. Clear Session permanently deletes this project
-      (points, links, and saved data) from this browser.
+      Export will include all current points and links (including tracked polylines).
+      Clear Session permanently deletes this project (points, links, and saved data) from this browser.
     </p>
   </div>
 
-  <!-- CONNECTION NAME MODAL -->
   <div id="linkModalOverlay">
     <div id="linkModal">
       <h3>New Connection</h3>
@@ -452,52 +438,45 @@
     </div>
   </div>
 
-  <!-- HELP OVERLAY ("BLOB") -->
   <div id="helpOverlay">
     <div id="helpBlob">
       <h2>Smart Walkout – Quick Guide</h2>
       <p><strong>1. Add Points</strong></p>
       <ul>
-        <li><strong>Record Current GPS</strong> – enter a name and tap to capture your current phone GPS location.</li>
-        <li>You can edit a point’s name and coordinates directly in the table.</li>
+        <li><strong>Record Current GPS</strong> – enter a name and tap to capture your current position.</li>
+        <li>Edit a point’s name and coordinates directly in the table.</li>
       </ul>
 
       <p><strong>2. Connect Points</strong></p>
       <ul>
-        <li>Use the canvas to visually connect points.</li>
-        <li>Tap one point, then another.</li>
-        <li>A dialog appears – optionally type a connection name (or leave blank) and tap <em>Confirm</em>.</li>
-        <li>The connection is drawn with the estimated distance in feet.</li>
+        <li>Use the canvas to connect points: tap one, then another.</li>
+        <li>Enter an optional connection name and confirm.</li>
+        <li>The line shows the approximate distance in feet.</li>
       </ul>
 
-      <p><strong>3. View &amp; Edit Links</strong></p>
+      <p><strong>3. Track Polylines</strong></p>
       <ul>
-        <li>The Links table shows each connection, its name, endpoints, and distance.</li>
-        <li>You can rename links there or delete them.</li>
+        <li>Tap <em>Start Track</em> to begin recording your path.</li>
+        <li>A vertex is recorded at your location when tracking begins, and then each time you move ~0.0001° from the last vertex.</li>
+        <li>Tap <em>Stop Track</em> to stop and add a final vertex at your current location.</li>
+        <li>The resulting polyline appears in the Links table and on the canvas with total distance in feet.</li>
       </ul>
 
-      <p><strong>4. Auto-Save</strong></p>
+      <p><strong>4. View &amp; Edit Links</strong></p>
       <ul>
-        <li>The indicator in the top-right shows <em>Saved</em> (green) or <em>Unsaved changes</em> (red).</li>
+        <li>The Links table shows connections and tracks, their names, endpoints/type, and distance.</li>
+        <li>You can rename or delete any link or track from this list.</li>
+      </ul>
+
+      <p><strong>5. Auto-Save &amp; Export</strong></p>
+      <ul>
         <li>Changes are auto-saved to your browser after a short delay.</li>
-        <li>When you reopen this page on the same device/browser, your last session reloads.</li>
-      </ul>
-
-      <p><strong>5. Export to KML</strong></p>
-      <ul>
-        <li>Tap <em>Export to .kml</em> to download a KML file.</li>
-        <li>Open the KML in Google Earth Pro to see:
-          <ul>
-            <li>Placemarks for each point (with your names) inside a “Stations” folder.</li>
-            <li>Lines for each connection, with distance in the description, inside a “Lines” folder.</li>
-          </ul>
-        </li>
+        <li>Export to KML to view stations and lines (including polylines) in Google Earth Pro.</li>
       </ul>
 
       <p><strong>6. Clear Session</strong></p>
       <ul>
-        <li><em>Clear Session</em> deletes all points, links, and saved data for this project from this browser.</li>
-        <li>Use this when you want to start a completely new project.</li>
+        <li>Use <em>Clear Session</em> to wipe all data and start fresh on this device.</li>
       </ul>
 
       <button class="secondary" id="helpBlobCloseBtn" type="button">Close Help</button>
@@ -505,25 +484,16 @@
   </div>
 
   <script>
-    /************************************************************
-     *  GLOBAL CONFIG & AUTOSAVE STATE
-     ************************************************************/
-
     const STORAGE_KEY = 'gps_canvas_links_state_v1';
 
-    // Autosave / dirty-state tracking
     let isDirty = false;
     let lastSavedAt = null;
     let autosaveTimerId = null;
-    const AUTOSAVE_DELAY_MS = 1000; // 1 second debounce
+    const AUTOSAVE_DELAY_MS = 1000;
 
-    // DOM handles for autosave indicator
     const autosaveIndicatorDot = document.getElementById('autosaveIndicatorDot');
     const autosaveIndicatorText = document.getElementById('autosaveIndicatorText');
 
-    /**
-     * Format a Date as YYYY-MM-DD HH:MM:SS
-     */
     function formatTimestamp(date) {
       if (!date) return 'Never';
       const pad = n => String(n).padStart(2, '0');
@@ -536,9 +506,6 @@
       return `${y}-${m}-${d} ${h}:${min}:${s}`;
     }
 
-    /**
-     * Date stamp for filenames (MM-DD-YYYY)
-     */
     function getDateStampForFilename() {
       const now = new Date();
       const pad = n => String(n).padStart(2, '0');
@@ -548,9 +515,6 @@
       return `${mm}-${dd}-${yyyy}`;
     }
 
-    /**
-     * Update the autosave indicator color + text based on isDirty/lastSavedAt.
-     */
     function updateAutosaveIndicator() {
       if (isDirty) {
         autosaveIndicatorDot.style.background = 'red';
@@ -565,9 +529,6 @@
       }
     }
 
-    /**
-     * Mark state as dirty and schedule an autosave after idle.
-     */
     function markDirty() {
       isDirty = true;
       updateAutosaveIndicator();
@@ -579,20 +540,10 @@
       }, AUTOSAVE_DELAY_MS);
     }
 
-    /************************************************************
-     *  DATA MODEL
-     *  - points: [{id, name, lat, lon, x, y}]
-     *  - links:  [{id, name, fromId, toId, distanceFeet}]
-     ************************************************************/
-
     let points = [];
     let links = [];
     let nextPointId = 1;
     let nextLinkId = 1;
-
-    /************************************************************
-     *  DOM ELEMENT REFERENCES
-     ************************************************************/
 
     const projectNameInput = document.getElementById('projectName');
     const pointNameInput = document.getElementById('pointName');
@@ -602,6 +553,9 @@
     const recordBtn = document.getElementById('recordBtn');
     const exportBtn = document.getElementById('exportBtn');
     const clearSessionBtn = document.getElementById('clearSessionBtn');
+
+    const startTrackBtn = document.getElementById('startTrackBtn');
+    const stopTrackBtn = document.getElementById('stopTrackBtn');
 
     const canvas = document.getElementById('mapCanvas');
     const ctx = canvas.getContext('2d');
@@ -616,20 +570,24 @@
     const helpOverlay = document.getElementById('helpOverlay');
     const helpBlobCloseBtn = document.getElementById('helpBlobCloseBtn');
 
-    // Canvas click state: first and second points for line creation
     let pendingFromPoint = null;
     let pendingToPoint = null;
 
-    // Project name changes should be persisted via autosave
+    // Global bounds for canvas projection (including points & polylines)
+    let minLatGlobal = null;
+    let maxLatGlobal = null;
+    let minLonGlobal = null;
+    let maxLonGlobal = null;
+    const CANVAS_PADDING = 20;
+
+    // Tracking state
+    let isTracking = false;
+    let trackWatchId = null;
+    let currentTrack = [];
+    const MIN_TRACK_DELTA_DEGREES = 0.0001; // threshold on approximate lat/lon displacement
+
     projectNameInput.addEventListener('input', markDirty);
 
-    /************************************************************
-     *  LOCAL STORAGE (SAVE / LOAD)
-     ************************************************************/
-
-    /**
-     * Save current project, points and links to localStorage.
-     */
     function saveState() {
       const state = {
         projectName: projectNameInput.value || '',
@@ -644,7 +602,8 @@
           name: l.name,
           fromId: l.fromId,
           toId: l.toId,
-          distanceFeet: l.distanceFeet
+          distanceFeet: l.distanceFeet,
+          polyline: l.polyline || null
         })),
         nextPointId,
         nextLinkId,
@@ -660,9 +619,6 @@
       }
     }
 
-    /**
-     * Load previously saved state from localStorage (if any).
-     */
     function loadState() {
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
@@ -670,7 +626,6 @@
         const state = JSON.parse(raw);
         if (!state || !Array.isArray(state.points) || !Array.isArray(state.links)) return;
 
-        // Restore project name
         if (state.projectName) {
           projectNameInput.value = state.projectName;
         }
@@ -689,7 +644,8 @@
           name: l.name,
           fromId: l.fromId,
           toId: l.toId,
-          distanceFeet: l.distanceFeet
+          distanceFeet: l.distanceFeet,
+          polyline: l.polyline || null
         }));
 
         nextPointId = state.nextPointId || (points.reduce((m,p) => Math.max(m,p.id), 0) + 1);
@@ -703,9 +659,6 @@
       }
     }
 
-    /**
-     * Completely wipe current session (local arrays + localStorage).
-     */
     function clearSession() {
       const ok = window.confirm(
         'This will delete ALL points, links, and saved session data for Smart Walkout on this device.\n\n' +
@@ -720,6 +673,16 @@
       pendingFromPoint = null;
       pendingToPoint = null;
       projectNameInput.value = '';
+
+      if (trackWatchId != null) {
+        navigator.geolocation.clearWatch(trackWatchId);
+        trackWatchId = null;
+      }
+      isTracking = false;
+      currentTrack = [];
+      startTrackBtn.disabled = false;
+      stopTrackBtn.disabled = true;
+
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch (e) {
@@ -734,19 +697,12 @@
       updateAutosaveIndicator();
     }
 
-    /************************************************************
-     *  GEOMETRY / DISTANCE HELPERS
-     ************************************************************/
-
     function toRad(deg) {
       return deg * Math.PI / 180;
     }
 
-    /**
-     * Haversine formula: distance between two lat/lon points (meters).
-     */
     function haversineDistanceMeters(lat1, lon1, lat2, lon2) {
-      const R = 6371000; // Earth radius in meters
+      const R = 6371000;
       const dLat = toRad(lat2 - lat1);
       const dLon = toRad(lon2 - lon1);
       const a =
@@ -757,21 +713,11 @@
       return R * c;
     }
 
-    /**
-     * Distance between two point objects in feet.
-     */
     function distanceFeetBetweenPoints(p1, p2) {
       const meters = haversineDistanceMeters(p1.lat, p1.lon, p2.lat, p2.lon);
       return meters * 3.28084;
     }
 
-    /************************************************************
-     *  POINT & LINK OPERATIONS
-     ************************************************************/
-
-    /**
-     * Add a new point to the model and refresh UI.
-     */
     function addPoint(name, lat, lon) {
       points.push({
         id: nextPointId++,
@@ -785,9 +731,6 @@
       markDirty();
     }
 
-    /**
-     * Delete a point and any links that reference it.
-     */
     function deletePoint(id) {
       links = links.filter(l => l.fromId !== id && l.toId !== id);
       points = points.filter(p => p.id !== id);
@@ -798,50 +741,46 @@
       markDirty();
     }
 
-    /**
-     * Add a link between two existing points with an optional name.
-     */
     function addLink(name, fromPt, toPt, distanceFeet) {
       links.push({
         id: nextLinkId++,
         name: name || '',
         fromId: fromPt.id,
         toId: toPt.id,
-        distanceFeet: distanceFeet
+        distanceFeet: distanceFeet,
+        polyline: null
       });
       renderLinks();
       markDirty();
     }
 
-    /**
-     * Delete a link by id.
-     */
     function deleteLink(id) {
       links = links.filter(l => l.id !== id);
       renderLinks();
       markDirty();
     }
 
-    /**
-     * Recalculate all link distances (used if point lat/lon change).
-     */
     function recalcAllLinkDistances() {
       links.forEach(l => {
-        const fromPt = points.find(p => p.id === l.fromId);
-        const toPt = points.find(p => p.id === l.toId);
-        if (fromPt && toPt) {
-          l.distanceFeet = distanceFeetBetweenPoints(fromPt, toPt);
+        if (l.polyline && Array.isArray(l.polyline) && l.polyline.length > 1) {
+          // Recompute polyline length
+          let totalFeet = 0;
+          for (let i = 1; i < l.polyline.length; i++) {
+            const p1 = l.polyline[i - 1];
+            const p2 = l.polyline[i];
+            totalFeet += distanceFeetBetweenPoints(p1, p2);
+          }
+          l.distanceFeet = totalFeet;
+        } else {
+          const fromPt = points.find(p => p.id === l.fromId);
+          const toPt = points.find(p => p.id === l.toId);
+          if (fromPt && toPt) {
+            l.distanceFeet = distanceFeetBetweenPoints(fromPt, toPt);
+          }
         }
       });
     }
 
-    /************************************************************
-     *  CANVAS LAYOUT + RENDERING
-     ************************************************************/
-
-    /**
-     * Resize canvas to fit parent container and current viewport height.
-     */
     function resizeCanvas() {
       const container = document.getElementById('canvasContainer');
       const rect = container.getBoundingClientRect();
@@ -861,15 +800,11 @@
       setTimeout(resizeCanvas, 300);
     });
 
-    /**
-     * Map lat/lon domain to canvas x/y coordinates with padding.
-     */
     function layoutPointsToCanvas() {
-      if (points.length === 0) return;
-
-      const padding = 20;
-      const width = canvas.width - padding * 2;
-      const height = canvas.height - padding * 2;
+      if (points.length === 0 && links.every(l => !l.polyline || l.polyline.length === 0)) {
+        minLatGlobal = maxLatGlobal = minLonGlobal = maxLonGlobal = null;
+        return;
+      }
 
       let minLat = Infinity, maxLat = -Infinity;
       let minLon = Infinity, maxLon = -Infinity;
@@ -881,21 +816,42 @@
         if (pt.lon > maxLon) maxLon = pt.lon;
       });
 
-      // Avoid division by zero if all points share same lat or lon
+      // Include polyline vertices in bounds
+      links.forEach(l => {
+        if (l.polyline && Array.isArray(l.polyline)) {
+          l.polyline.forEach(v => {
+            if (v.lat < minLat) minLat = v.lat;
+            if (v.lat > maxLat) maxLat = v.lat;
+            if (v.lon < minLon) minLon = v.lon;
+            if (v.lon > maxLon) maxLon = v.lon;
+          });
+        }
+      });
+
+      if (minLat === Infinity) {
+        minLat = maxLat = 0;
+        minLon = maxLon = 0;
+      }
+
       if (minLat === maxLat) { minLat -= 0.0001; maxLat += 0.0001; }
       if (minLon === maxLon) { minLon -= 0.0001; maxLon += 0.0001; }
+
+      minLatGlobal = minLat;
+      maxLatGlobal = maxLat;
+      minLonGlobal = minLon;
+      maxLonGlobal = maxLon;
+
+      const width = canvas.width - CANVAS_PADDING * 2;
+      const height = canvas.height - CANVAS_PADDING * 2;
 
       points.forEach(pt => {
         const xNorm = (pt.lon - minLon) / (maxLon - minLon);
         const yNorm = (pt.lat - minLat) / (maxLat - minLat);
-        pt.x = padding + xNorm * width;
-        pt.y = padding + (1 - yNorm) * height;
+        pt.x = CANVAS_PADDING + xNorm * width;
+        pt.y = CANVAS_PADDING + (1 - yNorm) * height;
       });
     }
 
-    /**
-     * Render entire canvas: links, then points, then highlight selection.
-     */
     function drawCanvas() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -904,35 +860,78 @@
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      // Draw links first
+      // Draw links and polylines
       links.forEach(lnk => {
-        const fromPt = points.find(p => p.id === lnk.fromId);
-        const toPt = points.find(p => p.id === lnk.toId);
-        if (!fromPt || !toPt || fromPt.x == null || toPt.x == null) return;
-
         ctx.strokeStyle = '#ffcf4a';
-        ctx.beginPath();
-        ctx.moveTo(fromPt.x, fromPt.y);
-        ctx.lineTo(toPt.x, toPt.y);
-        ctx.stroke();
 
-        const midX = (fromPt.x + toPt.x) / 2;
-        const midY = (fromPt.y + toPt.y) / 2;
-        const distLabel = lnk.distanceFeet != null
-          ? Math.round(lnk.distanceFeet) + ' ft'
-          : '';
-        const label = lnk.name
-          ? lnk.name + (distLabel ? ' (' + distLabel + ')' : '')
-          : distLabel;
+        // Polyline link
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1 &&
+            minLatGlobal !== null && maxLatGlobal !== null &&
+            minLonGlobal !== null && maxLonGlobal !== null) {
 
-        if (label) {
-          ctx.fillStyle = '#ffffff';
-          ctx.fillText(label, midX, midY);
+          const width = canvas.width - CANVAS_PADDING * 2;
+          const height = canvas.height - CANVAS_PADDING * 2;
+
+          const projected = lnk.polyline.map(pt => {
+            const xNorm = (pt.lon - minLonGlobal) / (maxLonGlobal - minLonGlobal);
+            const yNorm = (pt.lat - minLatGlobal) / (maxLatGlobal - minLatGlobal);
+            return {
+              x: CANVAS_PADDING + xNorm * width,
+              y: CANVAS_PADDING + (1 - yNorm) * height
+            };
+          });
+
+          if (projected.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(projected[0].x, projected[0].y);
+            for (let i = 1; i < projected.length; i++) {
+              ctx.lineTo(projected[i].x, projected[i].y);
+            }
+            ctx.stroke();
+          }
+
+          const midIndex = Math.floor(projected.length / 2);
+          const midX = projected[midIndex].x;
+          const midY = projected[midIndex].y;
+          const distLabel = lnk.distanceFeet != null
+            ? Math.round(lnk.distanceFeet) + ' ft'
+            : '';
+          const label = lnk.name
+            ? lnk.name + (distLabel ? ' (' + distLabel + ')' : '')
+            : distLabel;
+          if (label) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(label, midX, midY);
+          }
+
+        } else {
+          // Two-point link
+          const fromPt = points.find(p => p.id === lnk.fromId);
+          const toPt = points.find(p => p.id === lnk.toId);
+          if (!fromPt || !toPt || fromPt.x == null || toPt.x == null) return;
+
+          ctx.beginPath();
+          ctx.moveTo(fromPt.x, fromPt.y);
+          ctx.lineTo(toPt.x, toPt.y);
+          ctx.stroke();
+
+          const midX = (fromPt.x + toPt.x) / 2;
+          const midY = (fromPt.y + toPt.y) / 2;
+          const distLabel = lnk.distanceFeet != null
+            ? Math.round(lnk.distanceFeet) + ' ft'
+            : '';
+          const label = lnk.name
+            ? lnk.name + (distLabel ? ' (' + distLabel + ')' : '')
+            : distLabel;
+          if (label) {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(label, midX, midY);
+          }
         }
       });
 
-      // Draw points on top
-      const radius = 6;
+      // Draw points (larger for finger taps)
+      const radius = 10;
       points.forEach(pt => {
         if (pt.x == null || pt.y == null) return;
         ctx.beginPath();
@@ -949,22 +948,19 @@
         ctx.fillText(label, pt.x + radius + 3, pt.y);
       });
 
-      // Highlight the selected start point (if any) for link creation
+      // Highlight selected start point
       if (pendingFromPoint && pendingFromPoint.x != null) {
         ctx.beginPath();
         ctx.lineWidth = 3;
         ctx.strokeStyle = '#00ff9c';
-        ctx.arc(pendingFromPoint.x, pendingFromPoint.y, radius + 3, 0, Math.PI * 2);
+        ctx.arc(pendingFromPoint.x, pendingFromPoint.y, radius + 4, 0, Math.PI * 2);
         ctx.stroke();
         ctx.lineWidth = 2;
       }
     }
 
-    /**
-     * Hit-test: find a point (if any) at given canvas coordinates.
-     */
     function getPointAtCanvasCoords(x, y) {
-      const radius = 10; // tolerance for hit box
+      const radius = 18; // larger hit box for finger taps
       for (const pt of points) {
         if (pt.x == null || pt.y == null) continue;
         const dx = x - pt.x;
@@ -976,25 +972,16 @@
       return null;
     }
 
-    /************************************************************
-     *  RENDERING OF TABLES
-     ************************************************************/
-
-    /**
-     * Rebuild the points table from the points array.
-     */
     function renderPoints() {
       pointsTbody.innerHTML = '';
 
       points.forEach((pt, index) => {
         const tr = document.createElement('tr');
 
-        // Index column
         const idxTd = document.createElement('td');
         idxTd.textContent = index + 1;
         tr.appendChild(idxTd);
 
-        // Name (editable)
         const nameTd = document.createElement('td');
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
@@ -1009,7 +996,6 @@
         nameTd.appendChild(nameInput);
         tr.appendChild(nameTd);
 
-        // Latitude
         const latTd = document.createElement('td');
         const latInput = document.createElement('input');
         latInput.type = 'number';
@@ -1030,7 +1016,6 @@
         latTd.appendChild(latInput);
         tr.appendChild(latTd);
 
-        // Longitude
         const lonTd = document.createElement('td');
         const lonInput = document.createElement('input');
         lonInput.type = 'number';
@@ -1051,7 +1036,6 @@
         lonTd.appendChild(lonInput);
         tr.appendChild(lonTd);
 
-        // Actions (delete)
         const actionsTd = document.createElement('td');
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Del';
@@ -1069,21 +1053,16 @@
       drawCanvas();
     }
 
-    /**
-     * Rebuild the links table from the links array.
-     */
     function renderLinks() {
       linksTbody.innerHTML = '';
 
       links.forEach((lnk, index) => {
         const tr = document.createElement('tr');
 
-        // Index
         const idxTd = document.createElement('td');
         idxTd.textContent = index + 1;
         tr.appendChild(idxTd);
 
-        // Name (editable)
         const nameTd = document.createElement('td');
         const nameInput = document.createElement('input');
         nameInput.type = 'text';
@@ -1097,26 +1076,28 @@
         nameTd.appendChild(nameInput);
         tr.appendChild(nameTd);
 
-        // From / To labels
-        const fromPt = points.find(p => p.id === lnk.fromId);
-        const toPt = points.find(p => p.id === lnk.toId);
-
         const fromTd = document.createElement('td');
-        fromTd.textContent = fromPt ? (fromPt.name || ('Point ' + fromPt.id)) : '(deleted)';
-        tr.appendChild(fromTd);
-
         const toTd = document.createElement('td');
-        toTd.textContent = toPt ? (toPt.name || ('Point ' + toPt.id)) : '(deleted)';
+
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1) {
+          fromTd.textContent = 'Polyline';
+          toTd.textContent = `${lnk.polyline.length} pts`;
+        } else {
+          const fromPt = points.find(p => p.id === lnk.fromId);
+          const toPt = points.find(p => p.id === lnk.toId);
+          fromTd.textContent = fromPt ? (fromPt.name || ('Point ' + fromPt.id)) : '(deleted)';
+          toTd.textContent = toPt ? (toPt.name || ('Point ' + toPt.id)) : '(deleted)';
+        }
+
+        tr.appendChild(fromTd);
         tr.appendChild(toTd);
 
-        // Distance (ft)
         const distTd = document.createElement('td');
         distTd.textContent = lnk.distanceFeet != null
           ? Math.round(lnk.distanceFeet) + ' ft'
           : '';
         tr.appendChild(distTd);
 
-        // Actions (delete)
         const actionsTd = document.createElement('td');
         const deleteBtn = document.createElement('button');
         deleteBtn.textContent = 'Del';
@@ -1133,11 +1114,6 @@
       drawCanvas();
     }
 
-    /************************************************************
-     *  CANVAS INTERACTION (CLICK TO CONNECT)
-     ************************************************************/
-
-    // Canvas click handler: choose "from" point then "to" point
     canvas.addEventListener('click', (ev) => {
       const rect = canvas.getBoundingClientRect();
       const x = ev.clientX - rect.left;
@@ -1147,13 +1123,10 @@
       if (!clickedPoint) return;
 
       if (!pendingFromPoint) {
-        // First click selects starting point
         pendingFromPoint = clickedPoint;
       } else if (pendingFromPoint && clickedPoint.id === pendingFromPoint.id) {
-        // Click same point again -> cancel selection
         pendingFromPoint = null;
       } else {
-        // Second click selects end point -> open modal
         pendingToPoint = clickedPoint;
         openLinkModal(pendingFromPoint, pendingToPoint);
       }
@@ -1161,9 +1134,6 @@
       drawCanvas();
     });
 
-    /**
-     * Show the small modal asking for optional connection name.
-     */
     function openLinkModal(fromPt, toPt) {
       const info = `From: ${fromPt.name || ('Point ' + fromPt.id)}\n` +
                    `To: ${toPt.name || ('Point ' + toPt.id)}`;
@@ -1173,9 +1143,6 @@
       linkNameInputModal.focus();
     }
 
-    /**
-     * Hide the connection modal and clear selection.
-     */
     function closeLinkModal() {
       linkModalOverlay.style.display = 'none';
       pendingFromPoint = null;
@@ -1197,10 +1164,6 @@
       addLink(name || '', pendingFromPoint, pendingToPoint, distFeet);
       closeLinkModal();
     });
-
-    /************************************************************
-     *  GPS INPUT
-     ************************************************************/
 
     recordBtn.addEventListener('click', () => {
       statusSpan.textContent = 'Requesting location...';
@@ -1231,23 +1194,158 @@
       );
     });
 
-    /************************************************************
-     *  KML EXPORT
-     ************************************************************/
+    // Tracking (polyline) buttons
+    startTrackBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('Geolocation not supported in this browser.');
+        return;
+      }
+      if (isTracking) return;
+
+      isTracking = true;
+      currentTrack = [];
+      startTrackBtn.disabled = true;
+      stopTrackBtn.disabled = false;
+      statusSpan.textContent = 'Starting track...';
+
+      // We rely on watchPosition to capture the first vertex at current position
+      trackWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+
+          if (currentTrack.length === 0) {
+            // First vertex where user is when tracking starts
+            currentTrack.push({ lat, lon });
+            statusSpan.textContent = `Tracking... vertices: ${currentTrack.length}`;
+          } else {
+            const last = currentTrack[currentTrack.length - 1];
+            const dLat = lat - last.lat;
+            const dLon = lon - last.lon;
+            const approxDistDeg = Math.sqrt(dLat * dLat + dLon * dLon);
+            if (approxDistDeg >= MIN_TRACK_DELTA_DEGREES) {
+              currentTrack.push({ lat, lon });
+              statusSpan.textContent = `Tracking... vertices: ${currentTrack.length}`;
+            }
+          }
+        },
+        (err) => {
+          console.warn('Track error:', err.message);
+          alert('Tracking error: ' + err.message);
+          stopTrackingAndFinalize(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+
+    stopTrackBtn.addEventListener('click', () => {
+      stopTrackingAndFinalize(true);
+    });
+
+    function stopTrackingAndFinalize(shouldCreateLink) {
+      if (!isTracking) return;
+
+      isTracking = false;
+      startTrackBtn.disabled = false;
+      stopTrackBtn.disabled = true;
+
+      if (trackWatchId != null) {
+        navigator.geolocation.clearWatch(trackWatchId);
+        trackWatchId = null;
+      }
+
+      if (!shouldCreateLink) {
+        currentTrack = [];
+        statusSpan.textContent = '';
+        return;
+      }
+
+      // Add a final vertex at the location when user presses Stop
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+
+            if (currentTrack.length === 0) {
+              // No vertices yet; this final position serves as first and only
+              currentTrack.push({ lat, lon });
+            } else {
+              const last = currentTrack[currentTrack.length - 1];
+              const dLat = lat - last.lat;
+              const dLon = lon - last.lon;
+              const approxDistDeg = Math.sqrt(dLat * dLat + dLon * dLon);
+              if (approxDistDeg >= MIN_TRACK_DELTA_DEGREES) {
+                currentTrack.push({ lat, lon });
+              }
+            }
+
+            finalizeCurrentTrack();
+          },
+          (err) => {
+            console.warn('Final track position error:', err.message);
+            // Even without final vertex, finalize what we have
+            finalizeCurrentTrack();
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        finalizeCurrentTrack();
+      }
+    }
+
+    function finalizeCurrentTrack() {
+      if (currentTrack.length < 2) {
+        alert('Not enough vertices captured to create a track.');
+        currentTrack = [];
+        statusSpan.textContent = '';
+        return;
+      }
+
+      const defaultName = `Track ${nextLinkId}`;
+      const name = window.prompt('Name for this track?', defaultName) || defaultName;
+
+      let totalFeet = 0;
+      for (let i = 1; i < currentTrack.length; i++) {
+        const p1 = currentTrack[i - 1];
+        const p2 = currentTrack[i];
+        totalFeet += distanceFeetBetweenPoints(p1, p2);
+      }
+
+      links.push({
+        id: nextLinkId++,
+        name: name,
+        fromId: null,
+        toId: null,
+        distanceFeet: totalFeet,
+        polyline: currentTrack.map(p => ({ lat: p.lat, lon: p.lon }))
+      });
+
+      currentTrack = [];
+      statusSpan.textContent = 'Track recorded.';
+      renderLinks();
+      markDirty();
+    }
 
     exportBtn.addEventListener('click', () => {
-      if (points.length === 0) {
-        alert('No points to export.');
+      if (points.length === 0 && links.every(l => !l.polyline || l.polyline.length === 0)) {
+        alert('No points or tracks to export.');
         return;
       }
 
       const projectNameRaw = projectNameInput.value.trim();
       const projectName = projectNameRaw || 'Smart Walkout Project';
       const dateStamp = getDateStampForFilename();
-      // Sanitize for filename (no spaces/specials)
       const safeProjectNameForFile = projectName.replace(/[^a-zA-Z0-9_-]+/g, '_');
 
-      // KML header + Document + top-level project Folder
       const kmlHeader =
         `<?xml version="1.0" encoding="UTF-8"?>\n` +
         `<kml xmlns="http://www.opengis.net/kml/2.2">\n` +
@@ -1256,7 +1354,6 @@
         `  <Folder>\n` +
         `    <name>${escapeXml(projectName)}</name>\n`;
 
-      // Stations folder (all pin Placemarks)
       let stationsFolder =
         `    <Folder>\n` +
         `      <name>Stations</name>\n`;
@@ -1274,15 +1371,23 @@
       stationsFolder +=
         `    </Folder>\n`;
 
-      // Lines folder (each link as a LineString Placemark)
       let linesFolder =
         `    <Folder>\n` +
         `      <name>Lines</name>\n`;
 
       links.forEach((lnk, index) => {
-        const fromPt = points.find(p => p.id === lnk.fromId);
-        const toPt = points.find(p => p.id === lnk.toId);
-        if (!fromPt || !toPt) return;
+        let coordsText = '';
+
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1) {
+          coordsText = lnk.polyline
+            .map(p => `${p.lon},${p.lat},0`)
+            .join(' ');
+        } else {
+          const fromPt = points.find(p => p.id === lnk.fromId);
+          const toPt = points.find(p => p.id === lnk.toId);
+          if (!fromPt || !toPt) return;
+          coordsText = `${fromPt.lon},${fromPt.lat},0 ${toPt.lon},${toPt.lat},0`;
+        }
 
         const distFeet = lnk.distanceFeet != null
           ? Math.round(lnk.distanceFeet)
@@ -1310,7 +1415,7 @@
           `        </Style>\n` +
           `        <LineString>\n` +
           `          <tessellate>1</tessellate>\n` +
-          `          <coordinates>${fromPt.lon},${fromPt.lat},0 ${toPt.lon},${toPt.lat},0</coordinates>\n` +
+          `          <coordinates>${coordsText}</coordinates>\n` +
           `        </LineString>\n` +
           `      </Placemark>\n`;
       });
@@ -1318,7 +1423,6 @@
       linesFolder +=
         `    </Folder>\n`;
 
-      // Close project folder, Document, and root KML
       const kmlFooter =
         `  </Folder>\n` +
         `</Document>\n` +
@@ -1326,7 +1430,6 @@
 
       const kmlContent = kmlHeader + stationsFolder + linesFolder + kmlFooter;
 
-      // Download as a .kml file
       const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1338,9 +1441,6 @@
       URL.revokeObjectURL(url);
     });
 
-    /**
-     * Escape XML special chars for KML names/descriptions.
-     */
     function escapeXml(unsafe) {
       return unsafe.replace(/[<>&'"]/g, function (c) {
         switch (c) {
@@ -1353,10 +1453,6 @@
       });
     }
 
-    /************************************************************
-     *  HELP OVERLAY WIRES
-     ************************************************************/
-
     helpButton.addEventListener('click', () => {
       helpOverlay.style.display = 'flex';
     });
@@ -1366,29 +1462,18 @@
     });
 
     helpOverlay.addEventListener('click', (e) => {
-      // Close if user taps outside the blob
       if (e.target === helpOverlay) {
         helpOverlay.style.display = 'none';
       }
     });
 
-    /************************************************************
-     *  CLEAR SESSION BUTTON
-     ************************************************************/
-
     clearSessionBtn.addEventListener('click', clearSession);
 
-    /************************************************************
-     *  INITIALIZATION
-     ************************************************************/
-
-    // Load saved data, rebuild UI, and size canvas
     loadState();
     renderPoints();
     renderLinks();
     resizeCanvas();
 
-    // Loaded state is considered "saved" initially
     isDirty = false;
     updateAutosaveIndicator();
   </script>
