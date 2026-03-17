@@ -359,24 +359,30 @@
 
     <p class="small-text">
       Browser will prompt for location access. You can edit point names and coordinates directly in the table below.
-      When tracking, a polyline will be recorded along your path, with vertices spaced at least ~0.0001° apart.
     </p>
   </div>
 
   <div class="card">
-    <h2>Points (Editable)</h2>
-    <table id="pointsTable">
+    <h2>Record Inventory (Stations, Lines, Tracks)</h2>
+    <table id="inventoryTable">
       <thead>
         <tr>
           <th>#</th>
+          <th>Type</th>
           <th>Name</th>
-          <th>Latitude</th>
-          <th>Longitude</th>
+          <th>Col A</th>
+          <th>Col B</th>
+          <th>Distance (ft)</th>
           <th>Actions</th>
         </tr>
       </thead>
-      <tbody id="pointsTbody"></tbody>
+      <tbody id="inventoryTbody"></tbody>
     </table>
+    <p class="small-text">
+      Type legend: ● Station, ━ Line between stations, ≋ Tracked polyline.
+      <br>
+      For stations, Col A/B show editable Lat/Lon. For lines, Col A/B show From/To or polyline info.
+    </p>
   </div>
 
   <div class="card">
@@ -384,29 +390,11 @@
     <p class="small-text">
       Tap one point, then another to propose a connection. A dialog will appear:
       enter an optional name and confirm to create the line, or cancel to abort.
-      Estimated distance (feet) will be stored on the line and shown on the canvas.
-      Tracks recorded with Start/Stop Track appear as polylines.
+      Tracks recorded with Start/Stop Track appear as polylines. Distances are shown in feet.
     </p>
     <div id="canvasContainer">
       <canvas id="mapCanvas"></canvas>
     </div>
-  </div>
-
-  <div class="card">
-    <h2>Links (Created via Canvas & Tracking)</h2>
-    <table id="linksTable">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Name</th>
-          <th>From / Type</th>
-          <th>To / Info</th>
-          <th>Distance (ft)</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="linksTbody"></tbody>
-    </table>
   </div>
 
   <div class="card">
@@ -420,7 +408,7 @@
     </div>
 
     <p class="small-text">
-      Export will include all current points and links (including tracked polylines).
+      Export will include all current stations and links (including tracked polylines).
       Clear Session permanently deletes this project (points, links, and saved data) from this browser.
     </p>
   </div>
@@ -441,31 +429,31 @@
   <div id="helpOverlay">
     <div id="helpBlob">
       <h2>Smart Walkout – Quick Guide</h2>
-      <p><strong>1. Add Points</strong></p>
+      <p><strong>1. Add Stations</strong></p>
       <ul>
-        <li><strong>Record Current GPS</strong> – enter a name and tap to capture your current position.</li>
-        <li>Edit a point’s name and coordinates directly in the table.</li>
+        <li><strong>Record Current GPS</strong> – enter a name and tap to capture your current position as a station.</li>
+        <li>Edit a station’s name and coordinates directly in the inventory table (Type = ●).</li>
       </ul>
 
-      <p><strong>2. Connect Points</strong></p>
+      <p><strong>2. Connect Stations</strong></p>
       <ul>
-        <li>Use the canvas to connect points: tap one, then another.</li>
+        <li>Use the canvas to connect stations: tap one, then another.</li>
         <li>Enter an optional connection name and confirm.</li>
-        <li>The line shows the approximate distance in feet.</li>
+        <li>The line (Type = ━) shows the approximate distance in feet.</li>
       </ul>
 
       <p><strong>3. Track Polylines</strong></p>
       <ul>
         <li>Tap <em>Start Track</em> to begin recording your path.</li>
-        <li>A vertex is recorded at your location when tracking begins, and then each time you move ~0.0001° from the last vertex.</li>
+        <li>A vertex is recorded at your location when tracking begins, and then each time you move ~0.00001° from the last vertex.</li>
         <li>Tap <em>Stop Track</em> to stop and add a final vertex at your current location.</li>
-        <li>The resulting polyline appears in the Links table and on the canvas with total distance in feet.</li>
+        <li>The resulting polyline (Type = ≋) appears in the inventory table and on the canvas with total distance in feet.</li>
       </ul>
 
-      <p><strong>4. View &amp; Edit Links</strong></p>
+      <p><strong>4. View &amp; Edit Inventory</strong></p>
       <ul>
-        <li>The Links table shows connections and tracks, their names, endpoints/type, and distance.</li>
-        <li>You can rename or delete any link or track from this list.</li>
+        <li>The inventory table shows stations, lines, and tracks, their names, endpoints/info, and distance.</li>
+        <li>You can rename or delete any record from this list.</li>
       </ul>
 
       <p><strong>5. Auto-Save &amp; Export</strong></p>
@@ -548,8 +536,7 @@
     const projectNameInput = document.getElementById('projectName');
     const pointNameInput = document.getElementById('pointName');
     const statusSpan = document.getElementById('status');
-    const pointsTbody = document.getElementById('pointsTbody');
-    const linksTbody = document.getElementById('linksTbody');
+    const inventoryTbody = document.getElementById('inventoryTbody');
     const recordBtn = document.getElementById('recordBtn');
     const exportBtn = document.getElementById('exportBtn');
     const clearSessionBtn = document.getElementById('clearSessionBtn');
@@ -584,7 +571,7 @@
     let isTracking = false;
     let trackWatchId = null;
     let currentTrack = [];
-    const MIN_TRACK_DELTA_DEGREES = 0.0001; // threshold on approximate lat/lon displacement
+    const MIN_TRACK_DELTA_DEGREES = 0.00001; // threshold on approximate lat/lon displacement
 
     projectNameInput.addEventListener('input', markDirty);
 
@@ -690,8 +677,7 @@
       }
       isDirty = false;
       lastSavedAt = null;
-      renderPoints();
-      renderLinks();
+      renderInventory();
       layoutPointsToCanvas();
       drawCanvas();
       updateAutosaveIndicator();
@@ -727,7 +713,7 @@
         x: null,
         y: null
       });
-      renderPoints();
+      renderInventory();
       markDirty();
     }
 
@@ -736,8 +722,7 @@
       points = points.filter(p => p.id !== id);
       pendingFromPoint = null;
       pendingToPoint = null;
-      renderPoints();
-      renderLinks();
+      renderInventory();
       markDirty();
     }
 
@@ -750,20 +735,19 @@
         distanceFeet: distanceFeet,
         polyline: null
       });
-      renderLinks();
+      renderInventory();
       markDirty();
     }
 
     function deleteLink(id) {
       links = links.filter(l => l.id !== id);
-      renderLinks();
+      renderInventory();
       markDirty();
     }
 
     function recalcAllLinkDistances() {
       links.forEach(l => {
         if (l.polyline && Array.isArray(l.polyline) && l.polyline.length > 1) {
-          // Recompute polyline length
           let totalFeet = 0;
           for (let i = 1; i < l.polyline.length; i++) {
             const p1 = l.polyline[i - 1];
@@ -816,7 +800,6 @@
         if (pt.lon > maxLon) maxLon = pt.lon;
       });
 
-      // Include polyline vertices in bounds
       links.forEach(l => {
         if (l.polyline && Array.isArray(l.polyline)) {
           l.polyline.forEach(v => {
@@ -864,7 +847,6 @@
       links.forEach(lnk => {
         ctx.strokeStyle = '#ffcf4a';
 
-        // Polyline link
         if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1 &&
             minLatGlobal !== null && maxLatGlobal !== null &&
             minLonGlobal !== null && maxLonGlobal !== null) {
@@ -905,7 +887,6 @@
           }
 
         } else {
-          // Two-point link
           const fromPt = points.find(p => p.id === lnk.fromId);
           const toPt = points.find(p => p.id === lnk.toId);
           if (!fromPt || !toPt || fromPt.x == null || toPt.x == null) return;
@@ -948,7 +929,6 @@
         ctx.fillText(label, pt.x + radius + 3, pt.y);
       });
 
-      // Highlight selected start point
       if (pendingFromPoint && pendingFromPoint.x != null) {
         ctx.beginPath();
         ctx.lineWidth = 3;
@@ -960,7 +940,7 @@
     }
 
     function getPointAtCanvasCoords(x, y) {
-      const radius = 18; // larger hit box for finger taps
+      const radius = 18;
       for (const pt of points) {
         if (pt.x == null || pt.y == null) continue;
         const dx = x - pt.x;
@@ -972,15 +952,21 @@
       return null;
     }
 
-    function renderPoints() {
-      pointsTbody.innerHTML = '';
+    function renderInventory() {
+      inventoryTbody.innerHTML = '';
+      let rowIndex = 1;
 
-      points.forEach((pt, index) => {
+      // Stations (points)
+      points.forEach(pt => {
         const tr = document.createElement('tr');
 
         const idxTd = document.createElement('td');
-        idxTd.textContent = index + 1;
+        idxTd.textContent = rowIndex++;
         tr.appendChild(idxTd);
+
+        const typeTd = document.createElement('td');
+        typeTd.textContent = '●';
+        tr.appendChild(typeTd);
 
         const nameTd = document.createElement('td');
         const nameInput = document.createElement('input');
@@ -990,13 +976,12 @@
         nameInput.addEventListener('input', () => {
           pt.name = nameInput.value;
           drawCanvas();
-          renderLinks();
           markDirty();
         });
         nameTd.appendChild(nameInput);
         tr.appendChild(nameTd);
 
-        const latTd = document.createElement('td');
+        const colATd = document.createElement('td');
         const latInput = document.createElement('input');
         latInput.type = 'number';
         latInput.step = 'any';
@@ -1007,16 +992,15 @@
           if (!isNaN(val)) {
             pt.lat = val;
             layoutPointsToCanvas();
-            drawCanvas();
             recalcAllLinkDistances();
-            renderLinks();
+            renderInventory();
             markDirty();
           }
         });
-        latTd.appendChild(latInput);
-        tr.appendChild(latTd);
+        colATd.appendChild(latInput);
+        tr.appendChild(colATd);
 
-        const lonTd = document.createElement('td');
+        const colBTd = document.createElement('td');
         const lonInput = document.createElement('input');
         lonInput.type = 'number';
         lonInput.step = 'any';
@@ -1027,14 +1011,17 @@
           if (!isNaN(val)) {
             pt.lon = val;
             layoutPointsToCanvas();
-            drawCanvas();
             recalcAllLinkDistances();
-            renderLinks();
+            renderInventory();
             markDirty();
           }
         });
-        lonTd.appendChild(lonInput);
-        tr.appendChild(lonTd);
+        colBTd.appendChild(lonInput);
+        tr.appendChild(colBTd);
+
+        const distTd = document.createElement('td');
+        distTd.textContent = '';
+        tr.appendChild(distTd);
 
         const actionsTd = document.createElement('td');
         const deleteBtn = document.createElement('button');
@@ -1046,22 +1033,24 @@
         actionsTd.appendChild(deleteBtn);
         tr.appendChild(actionsTd);
 
-        pointsTbody.appendChild(tr);
+        inventoryTbody.appendChild(tr);
       });
 
-      layoutPointsToCanvas();
-      drawCanvas();
-    }
-
-    function renderLinks() {
-      linksTbody.innerHTML = '';
-
-      links.forEach((lnk, index) => {
+      // Links and polylines
+      links.forEach(lnk => {
         const tr = document.createElement('tr');
 
         const idxTd = document.createElement('td');
-        idxTd.textContent = index + 1;
+        idxTd.textContent = rowIndex++;
         tr.appendChild(idxTd);
+
+        const typeTd = document.createElement('td');
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1) {
+          typeTd.textContent = '≋';
+        } else {
+          typeTd.textContent = '━';
+        }
+        tr.appendChild(typeTd);
 
         const nameTd = document.createElement('td');
         const nameInput = document.createElement('input');
@@ -1076,21 +1065,21 @@
         nameTd.appendChild(nameInput);
         tr.appendChild(nameTd);
 
-        const fromTd = document.createElement('td');
-        const toTd = document.createElement('td');
+        const colATd = document.createElement('td');
+        const colBTd = document.createElement('td');
 
         if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1) {
-          fromTd.textContent = 'Polyline';
-          toTd.textContent = `${lnk.polyline.length} pts`;
+          colATd.textContent = 'Polyline';
+          colBTd.textContent = `${lnk.polyline.length} pts`;
         } else {
           const fromPt = points.find(p => p.id === lnk.fromId);
           const toPt = points.find(p => p.id === lnk.toId);
-          fromTd.textContent = fromPt ? (fromPt.name || ('Point ' + fromPt.id)) : '(deleted)';
-          toTd.textContent = toPt ? (toPt.name || ('Point ' + toPt.id)) : '(deleted)';
+          colATd.textContent = fromPt ? (fromPt.name || ('Point ' + fromPt.id)) : '(deleted)';
+          colBTd.textContent = toPt ? (toPt.name || ('Point ' + toPt.id)) : '(deleted)';
         }
 
-        tr.appendChild(fromTd);
-        tr.appendChild(toTd);
+        tr.appendChild(colATd);
+        tr.appendChild(colBTd);
 
         const distTd = document.createElement('td');
         distTd.textContent = lnk.distanceFeet != null
@@ -1108,9 +1097,10 @@
         actionsTd.appendChild(deleteBtn);
         tr.appendChild(actionsTd);
 
-        linksTbody.appendChild(tr);
+        inventoryTbody.appendChild(tr);
       });
 
+      layoutPointsToCanvas();
       drawCanvas();
     }
 
@@ -1208,14 +1198,12 @@
       stopTrackBtn.disabled = false;
       statusSpan.textContent = 'Starting track...';
 
-      // We rely on watchPosition to capture the first vertex at current position
       trackWatchId = navigator.geolocation.watchPosition(
         (pos) => {
           const lat = pos.coords.latitude;
           const lon = pos.coords.longitude;
 
           if (currentTrack.length === 0) {
-            // First vertex where user is when tracking starts
             currentTrack.push({ lat, lon });
             statusSpan.textContent = `Tracking... vertices: ${currentTrack.length}`;
           } else {
@@ -1264,7 +1252,6 @@
         return;
       }
 
-      // Add a final vertex at the location when user presses Stop
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -1272,7 +1259,6 @@
             const lon = pos.coords.longitude;
 
             if (currentTrack.length === 0) {
-              // No vertices yet; this final position serves as first and only
               currentTrack.push({ lat, lon });
             } else {
               const last = currentTrack[currentTrack.length - 1];
@@ -1288,7 +1274,6 @@
           },
           (err) => {
             console.warn('Final track position error:', err.message);
-            // Even without final vertex, finalize what we have
             finalizeCurrentTrack();
           },
           {
@@ -1331,7 +1316,7 @@
 
       currentTrack = [];
       statusSpan.textContent = 'Track recorded.';
-      renderLinks();
+      renderInventory();
       markDirty();
     }
 
@@ -1470,8 +1455,7 @@
     clearSessionBtn.addEventListener('click', clearSession);
 
     loadState();
-    renderPoints();
-    renderLinks();
+    renderInventory();
     resizeCanvas();
 
     isDirty = false;
