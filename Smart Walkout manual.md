@@ -1,4 +1,4 @@
-# Smart Walkout – User & Developer Manual
+# Smart Walkout – User & Developer Manual (Updated)
 
 ---
 
@@ -6,31 +6,31 @@
 
 ### 1.1 Purpose
 
-**Smart Walkout** is a lightweight, browser-based tool for:
+Smart Walkout is a lightweight, browser-based tool designed to:
 
-- Capturing GPS-based station points in the field.
-- Visually connecting those points to represent routes or segments.
-- Estimating segment lengths (in feet) using geographic distance.
-- Exporting the final layout to a KML file for use in GIS tools like Google Earth Pro.
+- Capture GPS-based stations in the field.
+- Visually connect those stations into lines.
+- Record walking paths as tracked polylines.
+- Estimate distances (in feet) for lines and tracked polylines.
+- Export the resulting layout as KML for use in tools like Google Earth Pro.
 
-It is designed to:
+The application:
 
-- Run entirely in the browser (no backend).
-- Work both on laptops and mobile devices with GPS.
-- Persist sessions locally using the browser’s `localStorage`.
-- Be simple for field users, but transparent enough for developers to extend.
+- Runs entirely in the browser (no backend).
+- Uses device geolocation when available.
+- Persists your work locally using the browser’s localStorage.
+- Is simple enough for field use, yet structured for easy code maintenance.
 
 ### 1.2 Typical Use Cases
 
-Common scenarios include:
-
-- Construction or engineering **walkouts** for planned cable or conduit routes.
-- High-level **site surveys** where full CAD/GIS is overkill.
-- Quick **as-built** sketches where approximate positions and lengths are acceptable.
-- Any workflow that needs:
-  - A list of station points with coordinates;
-  - Line segments between those points with approximate lengths;
-  - Simple export to KML.
+- Construction or engineering walkouts (planned cable/conduit routes).
+- High-level site surveys where full CAD/GIS is overkill.
+- Quick as-built sketches with approximate positions and lengths.
+- Any field workflow needing:
+  - Stations with coordinates.
+  - Lines between stations.
+  - Tracked paths with total footage.
+  - KML export for visualization.
 
 ---
 
@@ -38,527 +38,480 @@ Common scenarios include:
 
 ### 2.1 Requirements & Setup
 
-- A modern browser (Chrome, Edge, Firefox, Safari).
-- GPS access if you want to record true positions:
-  - Desktop: may be coarse, based on Wi‑Fi/IP.
-  - Mobile: typically uses GPS.
+- A modern browser: Chrome, Edge, Firefox, Safari.
+- Device/location services enabled if you want live GPS capture.
 - No installation:
-  - Save the HTML file locally.
-  - Open it in the browser.
+  - Save the HTML file.
+  - Open it directly in the browser.
 
-All data is stored in the device’s **localStorage** for that browser. It does not sync between devices or browsers.
+All data is stored in your browser’s localStorage on that device. It does not automatically sync between devices or browsers.
 
 ---
 
 ### 2.2 Project ID / Name
 
-At the top of the page:
+At the top:
 
-1. Locate: **Project ID / Name**.
-2. Enter a descriptive label, e.g.:
-   - `FTTH – Town Center Job 1234`
-   - `Ring A – North Loop`
+1. Locate “Project ID / Name”.
+2. Enter a descriptive label, for example:
+   - FTTH – Town Center Job 1234
+   - Ring A – North Loop
 
 This project name is used:
 
-- As the KML `<Document>` name.
+- As the KML Document name.
 - As the master folder name in the KML file.
-- In the exported filename, formatted as:  
-  `Project_Name_MM-DD-YYYY.kml`  
-  (special characters are sanitized for the filename).
+- In the exported filename:
+
+  Project_Name_MM-DD-YYYY.kml
+
+  (special characters are sanitized for filenames).
 
 ---
 
-### 2.3 Recording GPS Points
+### 2.3 Recording Stations (Points)
 
-1. In the **Record Current Location** card:
-   - Enter a **Location Name** (e.g. `Station 1`, `Node A`, `Pole 15`).
+In the “Record Current Location” card:
 
-2. Click **Record Current GPS**:
-   - The browser will prompt you for **location access**. Click *Allow*.
-   - Smart Walkout uses `navigator.geolocation` to read your current position.
-
-3. After a successful read:
-   - A new point is created with:
-     - Your entered name.
+1. Enter a Location Name (for example, Station 1, Node A, Pole 15).
+2. Click “Record Current GPS”:
+   - The browser prompts for location access (once per session). Allow it.
+   - Smart Walkout reads your current position from navigator.geolocation.
+3. On success:
+   - A new station is created with:
+     - Your chosen name.
      - Latitude and longitude from the device.
-   - The status line shows something like:  
-     `Recorded: Station 1 (Lat: 40.123456, Lon: -74.987654)`.
-
-4. The new point appears:
-   - As a row in **Points (Editable)**.
-   - As a yellow node on the **Canvas View**.
-
----
-
-### 2.4 Editing Points in the Table
-
-In the **Points (Editable)** card:
-
-- **Name column**:
-  - Click the input to rename a point.
-- **Latitude / Longitude columns**:
-  - You can manually adjust coordinates (to correct GPS or use known survey values).
-  - When lat/lon is changed:
-    - Canvas layout is recomputed.
-    - All link distances associated with that point are recalculated.
-    - The Links table and canvas labels update.
-
-To **delete a point**:
-
-- Click **Del** in the Actions column.
-- All links that reference that point are removed at the same time.
+   - Status line example:
+     - Recorded: Station 1 (Lat: 40.123456, Lon: -74.987654)
+4. The station is added to:
+   - The Record Inventory table (Type = ●).
+   - The canvas as a clickable point.
 
 ---
 
-### 2.5 Connecting Points on the Canvas
+## Chapter 3 – Record Inventory Table
 
-In the **Canvas View (Tap to Connect Points)** card:
+### 3.1 Unified Table Overview
 
-1. Each point is drawn as a **yellow circle** with its name next to it.
-2. To create a connection (link):
-   - Click one point (this becomes the **From** point).
-   - Then click another point (the **To** point).
+The “Record Inventory (Stations, Lines, Tracks)” card holds everything:
 
-3. A **New Connection** modal appears:
-   - Shows:
-     - `From: <Point Name>`
-     - `To: <Point Name>`
-   - Optionally enter a **Connection Name** (e.g. `Span 1`, `Segment A`).
-   - Click **Confirm** to create the link, or **Cancel** to discard.
+- Stations (points you record) – Type = ●
+- Lines (connections between two stations) – Type = ━
+- Tracks (polylines from walking) – Type = ≋
 
-4. When confirmed:
-   - A line is drawn between the two points on the canvas.
-   - The line label shows:
-     - The connection name (if set).
-     - The distance in feet (approximate).
-   - A new row is added to **Links (Created via Canvas)**.
+Table columns:
 
-To **cancel a pending selection**:
+- # – Row index.
+- Type –
+  - ● = Station
+  - ━ = Station-to-station line
+  - ≋ = Tracked polyline
+- Name – Editable record name.
+- Col A / Col B – Meaning depends on Type (described below).
+- Distance (ft) – Total length for lines and tracks.
+- Actions – Currently “Del” to delete the record.
 
-- If you click a point as the first selection, then click the same point again, the selection is cleared.
+### 3.2 Per-Type Behavior
 
----
+Stations (●):
 
-### 2.6 Reviewing & Editing Links
+- Name:
+  - Editable. Renaming updates the label in the canvas and in any From/To references.
+- Col A:
+  - Latitude (editable).
+- Col B:
+  - Longitude (editable).
+- Distance (ft):
+  - Blank for stations.
+- Actions:
+  - Del removes the station and any lines attached to it.
 
-In the **Links (Created via Canvas)** card:
+Lines (━):
 
-- Each row displays:
-  - Index number.
-  - **Name** (editable).
-  - **From** point name.
-  - **To** point name.
-  - **Distance (ft)**.
-- You can:
-  - Rename a link directly in the **Name** input.
-  - Delete a link using **Del** in the Actions column.
+- Created when you connect two stations on the canvas.
+- Name:
+  - Editable.
+- Col A:
+  - From station name (read-only).
+- Col B:
+  - To station name (read-only).
+- Distance (ft):
+  - Approximate distance between the two station coordinates, in feet.
+- Actions:
+  - Del removes only that line.
 
-Changing the link’s name updates the label on the canvas.
+Tracks (≋):
 
----
-
-### 2.7 Autosave & Session Management
-
-At the top-right of the screen:
-
-- **Autosave Indicator**:
-  - **Red** dot + text: `Unsaved changes`.
-  - **Green** dot + text: `Saved (last auto-save: YYYY-MM-DD HH:MM:SS)`.
-
-How it works:
-
-- Any change to project name, points, or links calls `markDirty()`.
-- After about 1 second of inactivity, `saveState()` writes the current state to `localStorage`.
-
-On page reload (same device & browser):
-
-- The last saved state is automatically reloaded:
-  - Project name.
-  - All points and links.
-  - Internal ID counters.
+- Created by Start Track / Stop Track (polyline tracking).
+- Name:
+  - Editable.
+- Col A:
+  - “Polyline”.
+- Col B:
+  - Vertex count (for example, “17 pts”).
+- Distance (ft):
+  - Sum of all segment distances in the track, in feet.
+- Actions:
+  - Del removes only that tracked polyline.
 
 ---
 
-### 2.8 Clear Session
+## Chapter 4 – Canvas: Viewing and Creating Lines
 
-In the **Export & Session** card:
+### 4.1 What You See
 
-1. Click **Clear Session**.
-2. A confirmation dialog warns that this action cannot be undone.
-3. If you confirm:
-   - All points and links are cleared.
-   - Project name is cleared.
-   - Stored state in `localStorage` is removed.
-   - The UI resets to a “fresh” project.
+In the “Canvas View (Tap to Connect Points)” card:
 
-Use Clear Session when you’re finished with a project and want to start a new one on the same device.
+- Stations (●) appear as yellow circles with labels.
+- Lines (━) and tracks (≋) appear as yellow linework overlaid on the canvas.
+- Distances are shown near each line/track label (in feet).
 
----
+Stations have been made larger and the hit area has been increased to make them easier to tap with a finger.
 
-### 2.9 Exporting to KML
+### 4.2 Creating a Line Between Stations
 
-In the **Export & Session** card:
+1. Tap or click a station on the canvas:
+   - This becomes the From station.
+   - It is highlighted with a green ring.
+2. Tap or click another station:
+   - This becomes the To station.
+3. A “New Connection” modal appears:
+   - Shows From and To station names.
+   - Lets you enter an optional Connection Name (for example, Segment 1).
+4. Confirm:
+   - A new line record (Type = ━) is added to the inventory table.
+   - The line is drawn between the two stations on the canvas.
+   - Distance (ft) is computed immediately.
 
-1. Click **Export to .kml**.
-2. If there are no points, you’ll see an alert: `No points to export.`.
-3. Otherwise:
-   - A KML file is generated with:
-     - `<Document>` named after your project.
-     - A master `<Folder>` with the same project name.
-     - Two subfolders:
-       - `<Folder name="Stations">` — one Placemark per point.
-       - `<Folder name="Lines">` — one Placemark per link.
+Cancel behavior:
 
-KML structure (simplified):
-
-- Document and Master Project folder:
-  - `<Document>`
-    - `<name>Project Name</name>`
-    - `<Folder>`
-      - `<name>Project Name</name>`
-      - `<Folder name="Stations">` …points… `</Folder>`
-      - `<Folder name="Lines">` …links… `</Folder>`
-    - `</Folder>`
-  - `</Document>`
-
-Stations (points):
-
-- Each point is a `<Placemark>` with:
-  - `<name>` = point name.
-  - `<Point><coordinates>lon,lat,0</coordinates></Point>`.
-
-Lines (links):
-
-- Each link is a `<Placemark>` with:
-  - `<name>` = link name (or `Link N` if unnamed).
-  - Optional `<description>` = `Distance: XXXX ft`.
-  - `<LineString>` from the “from” point coordinates to the “to” point coordinates.
-
-Filename:
-
-- `Project_Name_MM-DD-YYYY.kml`  
-  (where `Project_Name` is a sanitized version of the project name and the date stamp uses your current date).
-
-Open this file in **Google Earth Pro** or other KML-capable tools to visualize your walkout.
+- If you click the same station twice, it clears the selection.
+- You can also cancel from the modal to abandon the line.
 
 ---
 
-## Chapter 3 – Code Structure & Architecture
+## Chapter 5 – Tracking a Polyline (Walking a Route)
 
-This chapter helps future developers understand and modify the code.
+### 5.1 Controls
 
-### 3.1 Technology Overview
+In the “Record Current Location” card:
 
-- Plain **HTML**, **CSS**, and **JavaScript**.
-- No external libraries or frameworks.
-- All logic is inside a single `<script>` tag in the HTML file.
-- Runs entirely in the browser:
-  - Uses `navigator.geolocation` for GPS.
-  - Uses an HTML `<canvas>` for visualization.
-  - Uses `localStorage` for persistence.
+- Start Track
+- Stop Track
 
-There is no server-side component and no network I/O.
+These control the polyline tracker.
+
+### 5.2 Vertex Placement Logic
+
+While tracking:
+
+- A first vertex is recorded at your location as soon as tracking starts.
+- Additional vertices are only added when your position changes at least:
+
+  0.00001 degrees
+
+  measured as the square root of (Δlat² + Δlon²) compared to the last vertex.
+
+This threshold filters out very small movements and GPS jitter so you do not get an excessive number of points.
+
+When you press “Stop Track”:
+
+- The watchPosition subscription is cleared.
+- A final vertex is recorded at your current location if it is sufficiently different from the last vertex (by the same 0.00001-degree rule).
+- If there are at least two vertices:
+  - You are prompted for a track name (default: “Track N”).
+  - A new track record (Type = ≋) is added to the inventory table.
+  - Total distance is computed as the sum of segment distances between all consecutive vertices.
+- If there are fewer than two vertices, the track is discarded with a warning.
+
+### 5.3 How Tracks Display
+
+In the inventory table:
+
+- Type = ≋
+- Name = user-provided or default (“Track N”).
+- Col A = “Polyline”.
+- Col B = “X pts” (number of vertices captured).
+- Distance (ft) = total track length.
+
+On the canvas:
+
+- Tracks are drawn as multi-segment polylines.
+- A label near the midpoint shows the name and total distance (ft).
 
 ---
 
-### 3.2 Initialization Flow
+## Chapter 6 – Autosave & Session Management
 
-On page load:
+### 6.1 Autosave Indicator
 
-1. `loadState()`:
-   - Attempts to load saved JSON from `localStorage` under the key `gps_canvas_links_state_v1`.
-   - If valid, reconstructs:
-     - `projectName`
-     - `points` array
-     - `links` array
-     - `nextPointId` and `nextLinkId`
-     - `lastSavedAt`
+Top right: a pill showing:
 
-2. `renderPoints()`:
-   - Builds the **Points** table rows from the `points` array.
+- Red dot + text “Unsaved changes” when unsaved edits exist.
+- Green dot + “Saved (last auto-save: YYYY-MM-DD HH:MM:SS)” after a successful save.
 
-3. `renderLinks()`:
-   - Builds the **Links** table rows from the `links` array.
+### 6.2 How Autosave Works
 
-4. `resizeCanvas()`:
-   - Sizes the canvas to fit its container and the viewport.
-   - Calls `layoutPointsToCanvas()` and `drawCanvas()`.
+- Any change to:
+  - Project name
+  - Stations (name, lat, lon)
+  - Lines (name, creation/deletion)
+  - Tracks (creation, name, deletion)
+- Calls markDirty(), which:
+  - Sets isDirty = true.
+  - Updates the indicator.
+  - Schedules saveState() after 1 second of inactivity.
 
-5. Sets `isDirty = false` and calls `updateAutosaveIndicator()` to show “Saved”.
+saveState():
+
+- Serializes:
+  - projectName
+  - points
+  - links (including polylines)
+  - nextPointId
+  - nextLinkId
+  - lastSavedAt (timestamp)
+- Writes the JSON to localStorage under a fixed key.
+- Sets isDirty = false and updates lastSavedAt and the indicator.
+
+### 6.3 Reloading and Clearing Sessions
+
+On reload (same device + browser):
+
+- loadState() rehydrates projectName, stations, lines, tracks, and IDs.
+- The unified inventory table and canvas are rendered accordingly.
+
+Clear Session:
+
+- Removes all stations, lines, tracks, and saved state.
+- Resets project name and internal counters.
+- Stops any active tracking and resets UI state.
 
 ---
 
-## Chapter 4 – Data Model
+## Chapter 7 – Export to KML
 
-### 4.1 Points
+### 7.1 What Gets Exported
 
-Each point is stored as:
+When you click “Export to .kml”:
+
+- If there are no stations and no tracks/lines, you get a warning.
+- Otherwise, a KML file is built with:
+  - One “Stations” folder.
+  - One “Lines” folder.
+
+### 7.2 Stations Folder
+
+For each station (●):
+
+- A Placemark is created with:
+  - name = station name (or default “Point N”).
+  - Point geometry with lon,lat,0 coordinates.
+
+### 7.3 Lines Folder
+
+For each line or track (━ or ≋):
+
+- A Placemark is created with:
+  - name = record name (or “Link N” fallback).
+  - Optional description = “Distance: XXXX ft” (rounded).
+  - A LineStyle for color/width.
+  - A LineString with coordinates:
+    - For lines (━):
+      - Two coordinates: fromStationLon,fromStationLat,0 and toStationLon,toStationLat,0.
+    - For tracks (≋):
+      - All vertices in the polyline: lon1,lat1,0 lon2,lat2,0 … etc.
+
+### 7.4 KML File Name
+
+- Derived from:
+  - Sanitized project name (non-alphanumeric replaced with underscores).
+  - Date stamp (MM-DD-YYYY).
+- Format:
+
+  Project_Name_MM-DD-YYYY.kml
+
+---
+
+## Chapter 8 – Developer Architecture
+
+### 8.1 Technology Stack
+
+- HTML for structure.
+- CSS for layout and dark-themed UI.
+- Vanilla JavaScript for:
+  - Data model (stations, lines, tracks).
+  - Canvas rendering.
+  - Geolocation tracking.
+  - Autosave and KML export.
+- Runs entirely in the browser; no external libraries or backend.
+
+### 8.2 Data Structures
+
+Stations:
 
     {
-      id: Number,      // unique identifier
-      name: String,    // user-friendly label
-      lat: Number,     // latitude in decimal degrees
-      lon: Number,     // longitude in decimal degrees
-      x: Number|null,  // canvas x coordinate (derived)
-      y: Number|null   // canvas y coordinate (derived)
+      id: Number,
+      name: String,
+      lat: Number,
+      lon: Number,
+      x: Number|null,
+      y: Number|null
     }
 
-- `id` is used to link `links` back to specific points.
-- `x` and `y` are computed from `lat`/`lon` and not persisted.
-
-Only `id`, `name`, `lat`, and `lon` are saved to `localStorage`.
-
----
-
-### 4.2 Links
-
-Each link (connection between two points) is stored as:
+Links and tracks:
 
     {
-      id: Number,          // unique identifier
-      name: String,        // optional user label
-      fromId: Number,      // id of start point
-      toId: Number,        // id of end point
-      distanceFeet: Number // cached distance in feet
+      id: Number,
+      name: String,
+      fromId: Number|null,
+      toId: Number|null,
+      distanceFeet: Number,
+      polyline: [
+        { lat: Number, lon: Number },
+        ...
+      ] | null
     }
 
-- `fromId` and `toId` reference point IDs.
-- `distanceFeet` is calculated via Haversine distance and cached.
+Semantics:
 
----
+- fromId/toId are set for simple lines (━).
+- polyline is set (array) for tracked paths (≋) and null for simple lines.
+- distanceFeet is always the total distance of the line or polyline.
 
-### 4.3 Persisted State
+### 8.3 Persisted State
 
-State saved to `localStorage`:
+Stored in localStorage:
 
     {
       projectName: String,
       points: [ { id, name, lat, lon } ],
-      links: [ { id, name, fromId, toId, distanceFeet } ],
+      links: [ { id, name, fromId, toId, distanceFeet, polyline } ],
       nextPointId: Number,
       nextLinkId: Number,
-      lastSavedAt: Number // timestamp (ms since epoch)
+      lastSavedAt: Number
     }
 
-The storage key is `gps_canvas_links_state_v1`.
+Upon load:
+
+- points and links are reconstructed into in-memory arrays.
+- x and y for stations are recomputed by layoutPointsToCanvas().
+
+### 8.4 Layout and Drawing
+
+layoutPointsToCanvas():
+
+- Computes global bounds from:
+  - All station lat/lon.
+  - All polyline vertices (tracks).
+- Adds small padding if lat or lon ranges collapse.
+- Stores:
+  - minLatGlobal, maxLatGlobal, minLonGlobal, maxLonGlobal.
+- Projects each station:
+  - Normalized x and y into the canvas drawing area with padding.
+
+drawCanvas():
+
+- Clears canvas.
+- Draws links and polylines:
+  - For simple lines:
+    - Looks up from/to stations by id and draws a single segment.
+  - For polylines:
+    - Projects each vertex and renders a multi-segment path.
+  - Labels each with its name and total distance.
+- Draws stations:
+  - Yellow circles (radius ≈ 10px).
+  - Labels offset to the right.
+- Highlights a pending “From” station when creating a new line.
+
+getPointAtCanvasCoords():
+
+- Hit-test function using a radius ≈ 18 pixels for finger-friendly selection.
+
+### 8.5 Geolocation Integration
+
+Single-point capture (Record Current GPS):
+
+- Uses navigator.geolocation.getCurrentPosition.
+- On success, calls addPoint(name, lat, lon).
+
+Tracking (Start Track / Stop Track):
+
+- Uses navigator.geolocation.watchPosition to stream positions.
+- Adds vertices to currentTrack when the distance in degrees exceeds MIN_TRACK_DELTA_DEGREES (0.00001).
+- On Stop Track, optionally adds a final vertex and finalizes into a track record.
+
+### 8.6 Distance Calculation
+
+Haversine-based:
+
+- haversineDistanceMeters(lat1, lon1, lat2, lon2)
+- distanceFeetBetweenPoints(p1, p2) converts meters to feet via factor 3.28084.
+
+Uses:
+
+- When creating station-to-station lines.
+- When finalizing tracked polylines.
+- When reprojecting station coordinates and recomputing link distances.
 
 ---
 
-## Chapter 5 – Functional Modules
+## Chapter 9 – Extending and Maintaining the Code
 
-### 5.1 Autosave & Dirty State
+### 9.1 Adding New Fields
 
-Important globals:
+To add new properties, for example:
 
-- `isDirty` – whether unsaved changes exist.
-- `lastSavedAt` – JavaScript `Date` of last save.
-- `AUTOSAVE_DELAY_MS` – delay (ms) before auto-saving after the last change.
+- Station attributes:
+  - type (pole, handhole, node).
+  - notes.
+- Link attributes:
+  - cableType.
+  - conduitSize.
 
-Key functions:
+You would:
 
-- `markDirty()`:
-  - Sets `isDirty = true`.
-  - Updates the autosave indicator.
-  - Schedules `saveState()` via `setTimeout` (debounced).
+1. Extend objects in addPoint() or link creation.
+2. Update saveState() and loadState() to include the new fields.
+3. Update renderInventory() to display/edit them where appropriate.
+4. Optionally reflect them in KML export (for example, in description).
 
-- `saveState()`:
-  - Builds a serializable state object.
-  - Calls `localStorage.setItem(STORAGE_KEY, JSON.stringify(state))`.
-  - Sets `lastSavedAt` and `isDirty = false`.
-  - Updates the autosave indicator.
+### 9.2 Adding New Export Formats
 
-If the codebase is extended with new persistent fields, both `saveState()` and `loadState()` should be updated.
+To add CSV, GeoJSON, or other exports:
 
----
+- Create a new button and handler.
+- Iterate over points and links to build the desired format.
+- Use the Blob + temporary link pattern (same as KML) to trigger download.
 
-### 5.2 Canvas Layout & Rendering
+### 9.3 Refactoring into Modules
 
-Responsibilities:
+For larger-scale maintenance, consider:
 
-- Map geographic coordinates to a 2D canvas.
-- Render points and links.
-- Provide visual feedback for selections.
+- Splitting into:
+  - index.html (structure)
+  - styles.css (styling)
+  - app.js (logic)
+- Within app.js, grouping into modules:
+  - Storage (save/load/clear).
+  - Geo (distance, projections).
+  - CanvasView (layout, draw, hit tests).
+  - Inventory (renderInventory, CRUD operations).
+  - Export (KML and other formats).
+  - Ui (event handlers, modals, help).
 
-Core functions:
-
-1. `layoutPointsToCanvas()`:
-   - Finds min/max latitude and longitude.
-   - Applies a margin (padding) on the canvas edge.
-   - Rescales all points so they fit into canvas dimensions.
-   - Stores pixel coordinates into each point’s `x` and `y`.
-
-2. `drawCanvas()`:
-   - Clears the canvas.
-   - Draws all links:
-     - A line between `fromPt` and `toPt`.
-     - A label at the midpoint containing:
-       - Link name.
-       - Distance (feet).
-   - Draws all points:
-     - Yellow filled circle with black stroke.
-     - Name label next to each point.
-   - Highlights `pendingFromPoint` (the selected start point) with a green ring.
-
-3. `getPointAtCanvasCoords(x, y)`:
-   - Performs a radius-based hit test to see if a click is close to any point’s `(x, y)`.
-   - Returns the matched point or `null`.
+The current single-file approach is intentional for portability and offline use, but modularization is straightforward.
 
 ---
 
-### 5.3 Geolocation Integration
+## Chapter 10 – Summary
 
-The **Record Current GPS** button handler:
+The current version of Smart Walkout provides:
 
-- Calls `navigator.geolocation.getCurrentPosition` with options:
-  - `enableHighAccuracy: true`
-  - `timeout: 10000`
-  - `maximumAge: 0`
-- On success:
-  - Extracts `lat` and `lon`.
-  - Uses the current `pointNameInput` value (or a fallback like `Point N`).
-  - Calls `addPoint(name, lat, lon)`.
+- Unified record inventory for all stations, lines, and tracks in a single table.
+- Finger-friendly station selection and clear visual feedback on the canvas.
+- Polyline tracking with a fine-grained vertex filter (0.00001°) and total track distance in feet.
+- KML export that accurately represents stations, simple lines, and multi-vertex polylines.
+- Autosave to localStorage and complete session clearing.
 
-On error (user denies permission, timeout, etc.):
-
-- Updates the status text with a message such as:  
-  `Error getting location: <message>`.
-
----
-
-### 5.4 Distance Computation (Haversine)
-
-Distance between two points is computed in meters using the **Haversine formula**, then converted to feet:
-
-- `haversineDistanceMeters(lat1, lon1, lat2, lon2)`:
-  - Uses Earth radius `R = 6371000` meters.
-  - Converts degrees to radians.
-  - Computes great-circle distance.
-
-- `distanceFeetBetweenPoints(p1, p2)`:
-  - Calls `haversineDistanceMeters(p1.lat, p1.lon, p2.lat, p2.lon)`.
-  - Multiplies meters by `3.28084` to get feet.
-
-Every link created uses this to initialize `distanceFeet`. Whenever a point’s coordinates change, `recalcAllLinkDistances()` recomputes link distances.
-
----
-
-### 5.5 KML Exporter
-
-Within the `exportBtn` click handler:
-
-1. Validates that there is at least one point.
-2. Determines:
-   - `projectName` (or a default like `Smart Walkout Project`).
-   - `dateStamp` from `getDateStampForFilename()` (MM-DD-YYYY).
-   - `safeProjectNameForFile`, which is a sanitized version of the project name for filenames.
-3. Builds the KML as a concatenation of:
-   - `kmlHeader`:
-     - XML declaration.
-     - `<kml>` and `<Document>` tags.
-     - Project-level `<name>`.
-     - Opening project `<Folder>` with project name.
-   - `stationsFolder`:
-     - `<Folder name="Stations">`.
-     - One `<Placemark>` per point with `<name>` and `<Point><coordinates>`.
-   - `linesFolder`:
-     - `<Folder name="Lines">`.
-     - One `<Placemark>` per link with `<name>`, optional `<description>`, `<Style>`, and `<LineString>`.
-   - `kmlFooter`:
-     - Closing project folder, `</Document>` and `</kml>`.
-
-4. Downloads the KML:
-   - Creates a `Blob` from the KML string.
-   - Creates a temporary `<a>` element with `href` set to a `blob:` URL.
-   - Sets `download` to `Project_Name_MM-DD-YYYY.kml`.
-   - Triggers a click on this link, then removes it and revokes the URL.
-
----
-
-### 5.6 Help Overlay
-
-Help behavior:
-
-- **Open Help**:
-  - Clicking the **Help** button sets `helpOverlay.style.display = 'flex'`.
-- **Close Help**:
-  - Clicking the **Close Help** button sets `helpOverlay.style.display = 'none'`.
-  - Clicking outside the help blob (on the translucent background) also closes it:
-    - The event handler checks `if (e.target === helpOverlay)`.
-
-The help text mirrors the key user flows described in this manual.
-
----
-
-## Chapter 6 – Extending and Maintaining the Code
-
-### 6.1 Adding New Fields
-
-To add a new property to the data model:
-
-1. **Points** (e.g., `type`, `notes`):
-   - Add the property when creating points in `addPoint()`.
-   - Include it in `saveState()` when serializing.
-   - Restore it in `loadState()`.
-   - Optionally render it in `renderPoints()` (e.g., new table column).
-
-2. **Links** (e.g., `cableSize`, `conduitType`):
-   - Add the property when creating links in `addLink()`.
-   - Include it in `saveState()` and `loadState()`.
-   - Optionally show or edit it in `renderLinks()`.
-
-If you want these new properties to appear in KML:
-
-- Add them to `<description>` or additional KML elements in the export builder.
-
----
-
-### 6.2 Adding New Export Formats
-
-To support CSV, GeoJSON, or another format:
-
-1. Add a new button and handler (e.g., `Export to CSV`).
-2. Build a string (or object) representation from `points` and `links`.
-3. Use the same `Blob` + `<a>` download pattern:
-   - Create a `Blob` with the appropriate MIME type.
-   - Create a temporary link pointing to the blob URL.
-   - Assign a meaningful filename, then trigger the download.
-
-This preserves the self-contained nature of the tool while extending interoperability.
-
----
-
-### 6.3 Splitting Into Separate Files (Optional)
-
-For larger projects, you might want to split:
-
-- `index.html` – structure.
-- `styles.css` – styles.
-- `app.js` – logic.
-
-Within `app.js`, you could group functions into modules:
-
-- `Storage`: `saveState`, `loadState`, `clearSession`.
-- `CanvasView`: `layoutPointsToCanvas`, `drawCanvas`, `getPointAtCanvasCoords`.
-- `Geo`: distance calculations (Haversine).
-- `Exporter`: KML and other export formats.
-- `Ui`: event wiring for buttons and inputs.
-
-The current single-file approach is optimized for portability and ease of deployment.
-
----
-
-## Chapter 7 – Summary
-
-Smart Walkout:
-
-- Gives field teams a quick way to capture stations, connect them, and estimate distances.
-- Stores everything locally and exports clean KML with a project-centered folder structure.
-- Uses simple, readable JavaScript with no dependencies or backend services.
-
-This manual is structured so that:
-
-- **Chapters 1–2** help end users understand how to operate the tool in the field.
-- **Chapters 3–6** help developers understand how the code is organized, how data flows, and where to extend or maintain it.
-
-With this manual and the HTML file, a future developer should be able to pick up Smart Walkout, understand its intent and structure, and confidently evolve it to meet new requirements.
+With this updated manual and the HTML source, a future developer can understand how stations, lines, and polylines are represented, how they are rendered, and how to extend the tool to fit new field workflows or data requirements.
