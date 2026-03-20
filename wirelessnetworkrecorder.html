@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Network Station Logger</title>
+<style>
+  :root {
+    --c1: #fbfbed;
+    --c2: #f1fdba;
+    --c3: #e7ff75;
+    --c4: #6385db;
+    --c5: #3b4f9b;
+    --c6: #020426;
+    --card-bg: #07103a;
+    --border: #1a2660;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: var(--c6); color: var(--c1); padding: 14px; max-width: 540px; margin: 0 auto; }
+
+  /* HEADER */
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+  h1 { font-size: 1.15rem; color: var(--c3); letter-spacing: 0.04em; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+  .save-indicator { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--c2); }
+  .save-dot { width: 10px; height: 10px; border-radius: 50%; background: #f44336; transition: background 0.4s; flex-shrink: 0; }
+  .save-dot.saved { background: #4caf50; }
+  .btn-help { background: var(--c5); border: 1px solid var(--c4); color: var(--c2); border-radius: 50%; width: 28px; height: 28px; font-size: 0.85rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+  /* STATUS BAR */
+  .status-bar { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; font-size: 0.75rem; }
+  .gps-status { color: #888; }
+  .gps-status.ok { color: var(--c3); }
+  .gps-status.err { color: #f87171; }
+  .gps-status.working { color: var(--c4); }
+
+  /* NETWORK PREVIEW */
+  .net-preview { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .net-label { font-size: 0.68rem; color: var(--c4); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .net-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px; font-size: 0.76rem; color: #8899cc; }
+  .net-grid .val { color: var(--c2); font-weight: 600; }
+
+  /* RECORD BUTTON */
+  .btn-record { width: 100%; padding: 15px; background: var(--c5); color: var(--c3); border: 2px solid var(--c4); border-radius: 10px; font-size: 1.05rem; font-weight: 800; cursor: pointer; margin-bottom: 10px; letter-spacing: 0.05em; transition: background 0.15s; }
+  .btn-record:active { background: var(--c4); color: var(--c6); }
+  .btn-record:disabled { opacity: 0.5; }
+
+  /* EXPORT ROW */
+  .export-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .btn-export { flex: 1; padding: 10px 4px; border: none; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; letter-spacing: 0.02em; }
+  .btn-csv { background: var(--c3); color: var(--c6); }
+  .btn-kml { background: var(--c4); color: var(--c1); }
+  .btn-clear { background: #3a0a0a; color: #fca5a5; border: 1px solid #7f1d1d; }
+
+  /* STATION LIST */
+  .station-count { font-size: 0.72rem; color: var(--c4); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .station-list { display: flex; flex-direction: column; gap: 8px; }
+  .station-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; }
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px; }
+  .station-name { font-size: 0.9rem; font-weight: 800; color: var(--c3); }
+  .btn-del { background: #3a0a0a; border: 1px solid #7f1d1d; color: #fca5a5; border-radius: 5px; padding: 4px 10px; font-size: 0.72rem; cursor: pointer; white-space: nowrap; }
+  .station-coords { font-size: 0.78rem; color: var(--c2); font-family: monospace; margin-bottom: 3px; }
+  .station-time { font-size: 0.68rem; color: #4a5a8a; margin-bottom: 4px; }
+  .station-net { font-size: 0.72rem; color: #5a6a9a; line-height: 1.7; border-top: 1px solid var(--border); padding-top: 5px; margin-top: 4px; }
+  .station-net .nv { color: #8899cc; }
+  .empty { text-align: center; color: #2a3560; font-size: 0.85rem; padding: 30px 0; }
+
+  /* HELP MODAL */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(2,4,38,0.92); z-index: 100; padding: 20px; overflow-y: auto; }
+  .modal-overlay.open { display: block; }
+  .modal-blob { background: var(--card-bg); border: 1px solid var(--c4); border-radius: 14px; padding: 20px; max-width: 500px; margin: 0 auto; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-title { font-size: 1rem; font-weight: 800; color: var(--c3); }
+  .btn-close { background: var(--c5); border: none; color: var(--c2); border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; cursor: pointer; }
+  .help-section { margin-bottom: 14px; }
+  .help-h { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--c4); margin-bottom: 5px; }
+  .help-p { font-size: 0.78rem; color: var(--c2); line-height: 1.65; }
+  .help-p + .help-p { margin-top: 5px; }
+  .help-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; margin-top: 5px; }
+  .help-table th { text-align: left; color: var(--c3); padding: 4px 6px; border-bottom: 1px solid var(--border); }
+  .help-table td { padding: 4px 6px; color: var(--c2); border-bottom: 1px solid #0e1845; vertical-align: top; }
+  .help-table td:first-child { color: var(--c4); font-family: monospace; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📡 Station Logger</h1>
+  <div class="header-right">
+    <div class="save-indicator">
+      <div class="save-dot" id="saveDot"></div>
+      <span id="saveLabel">Unsaved</span>
+    </div>
+    <button class="btn-help" onclick="toggleHelp()">?</button>
+  </div>
+</div>
+<p style="font-size:0.68rem;color:#2a3a6a;margin-bottom:10px;">Network + GPS field recorder</p>
+
+<div class="status-bar">
+  <div class="gps-status" id="gpsStatus">GPS will acquire on record</div>
+</div>
+
+<div class="net-preview">
+  <div class="net-label">Live Network</div>
+  <div class="net-grid" id="netPreview">Checking...</div>
+</div>
+
+<button class="btn-record" id="recBtn" onclick="recordStation()">⊕ RECORD STATION</button>
+
+<div class="export-row">
+  <button class="btn-export btn-csv" onclick="exportCSV()">⬇ CSV</button>
+  <button class="btn-export btn-kml" onclick="exportKML()">🗺 KML</button>
+  <button class="btn-export btn-clear" onclick="clearAll()">🗑 Clear</button>
+</div>
+
+<div class="station-count" id="stationCount">0 stations recorded</div>
+<div class="station-list" id="stationList"><div class="empty">No stations yet</div></div>
+
+<!-- HELP MODAL -->
+<div class="modal-overlay" id="helpModal">
+  <div class="modal-blob">
+    <div class="modal-header">
+      <div class="modal-title">📡 How to Use</div>
+      <button class="btn-close" onclick="toggleHelp()">Close</button>
+    </div>
+
+    <div class="help-section">
+      <div class="help-h">What This Does</div>
+      <p class="help-p">Network Station Logger captures your GPS coordinates and mobile network data at each physical location you visit. Press <strong>Record Station</strong> at each point — it will acquire GPS and snapshot the current network conditions. Build up a list of stations, then export for analysis.</p>
+    </div>
+
+    <div class="help-section">
+      <div class="help-h">Buttons</div>
+      <table class="help-table">
+        <tr><th>Button</th><th>What it does</th></tr>
+        <tr><td>⊕ Record Station</td><td>Acquires GPS fix then captures all network data. Adds a new numbered station to the list.</td></tr>
+        <tr><td>⬇ CSV</td><td>Exports all stations as a comma-separated file. Opens in Excel, Google Sheets, etc.</td></tr>
+        <tr><td>🗺 KML</td><td>Exports stations as a KML file. Open in Google Earth or Google Maps to view pins with metadata popups.</td></tr>
+        <tr><td>🗑 Clear</td><td>Deletes all stations after confirmation. Cannot be undone.</td></tr>
+        <tr><td>✕ Delete</td><td>Removes a single station from the list.</td></tr>
+      </table>
+    </div>
+
+    <div class="help-section">
+      <div class="help-h">Output Data Fields</div>
+      <table class="help-table">
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td>Name</td><td>Auto-numbered station label (Station 1, 2…)</td></tr>
+        <tr><td>Latitude</td><td>Decimal degrees, 5 decimal places (~1m precision)</td></tr>
+        <tr><td>Longitude</td><td>Decimal degrees, 5 decimal places</td></tr>
+        <tr><td>Timestamp</td><td>ISO 8601 UTC time of recording</td></tr>
+        <tr><td>GPS Accuracy</td><td>Estimated radius of GPS fix in meters</td></tr>
+        <tr><td>type</td><td>Physical connection: wifi, cellular, ethernet, none, unknown</td></tr>
+        <tr><td>effectiveType</td><td>Estimated quality: slow-2g, 2g, 3g, 4g</td></tr>
+        <tr><td>downlink</td><td>Estimated bandwidth in Mbps (rounded to 25kbps)</td></tr>
+        <tr><td>rtt</td><td>Round-trip latency in ms (rounded to 25ms)</td></tr>
+        <tr><td>saveData</td><td>Whether device data-saver mode is active</td></tr>
+        <tr><td>downlinkMax</td><td>Theoretical max speed for connection type</td></tr>
+      </table>
+    </div>
+
+    <div class="help-section">
+      <div class="help-h">Notes</div>
+      <p class="help-p">Network data is a browser estimate — values update when the OS detects a meaningful change, not on a fixed timer. Two nearby stations may share identical network readings if signal didn't change enough to trigger an update.</p>
+      <p class="help-p">Network Information API requires a Chromium-based browser (Chrome, Edge). GPS requires location permission and HTTPS.</p>
+      <p class="help-p">All data is auto-saved to your browser's local storage. It will survive page refreshes and closing the tab.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  const STORAGE_KEY = 'nsl_stations';
+  const COUNTER_KEY = 'nsl_counter';
+  let stations = [];
+  let stationCounter = 0;
+  let saveTimeout = null;
+
+  // --- STORAGE ---
+  function loadFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      const cnt = localStorage.getItem(COUNTER_KEY);
+      if (raw) stations = JSON.parse(raw);
+      if (cnt) stationCounter = parseInt(cnt);
+      setSaved(true);
+    } catch(e) { stations = []; stationCounter = 0; }
+  }
+
+  function saveToStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stations));
+      localStorage.setItem(COUNTER_KEY, String(stationCounter));
+      setSaved(true);
+    } catch(e) { setSaved(false); }
+  }
+
+  function setSaved(ok) {
+    const dot = document.getElementById('saveDot');
+    const lbl = document.getElementById('saveLabel');
+    if (ok) { dot.classList.add('saved'); lbl.textContent = 'Saved'; }
+    else { dot.classList.remove('saved'); lbl.textContent = 'Unsaved'; }
+  }
+
+  function debounceSave() {
+    setSaved(false);
+    clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveToStorage, 600);
+  }
+
+  // --- NETWORK ---
+  function getNetworkData() {
+    const c = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (!c) return { supported: false };
+    return {
+      supported: true,
+      effectiveType: c.effectiveType || 'n/a',
+      type: c.type || 'n/a',
+      downlink: c.downlink != null ? c.downlink : null,
+      rtt: c.rtt != null ? c.rtt : null,
+      saveData: c.saveData != null ? c.saveData : null,
+      downlinkMax: c.downlinkMax != null ? c.downlinkMax : null
+    };
+  }
+
+  function updateNetPreview() {
+    const n = getNetworkData();
+    const el = document.getElementById('netPreview');
+    if (!n.supported) {
+      el.innerHTML = '<span style="color:#f87171;grid-column:1/-1">Network API not supported</span>';
+      return;
+    }
+    const fmt = (v, unit) => v != null ? `<span class="val">${v}${unit}</span>` : '<span class="val" style="color:#3a4a6a">n/a</span>';
+    el.innerHTML = `
+      <div>Type</div>${fmt(n.type,'')}
+      <div>Effective</div>${fmt(n.effectiveType,'')}
+      <div>Downlink</div>${fmt(n.downlink,' Mbps')}
+      <div>RTT</div>${fmt(n.rtt,' ms')}
+      <div>Save Data</div>${fmt(n.saveData != null ? String(n.saveData) : null,'')}
+      <div>Max DL</div>${fmt(n.downlinkMax,' Mbps')}
+    `;
+  }
+
+  // --- RECORD ---
+  function recordStation() {
+    const btn = document.getElementById('recBtn');
+    const st = document.getElementById('gpsStatus');
+    btn.disabled = true;
+    btn.textContent = '⏳ Acquiring GPS...';
+    st.textContent = 'Acquiring GPS fix...';
+    st.className = 'gps-status working';
+
+    navigator.geolocation.getCurrentPosition(pos => {
+      const lat = parseFloat(pos.coords.latitude.toFixed(5));
+      const lon = parseFloat(pos.coords.longitude.toFixed(5));
+      const acc = Math.round(pos.coords.accuracy);
+
+      stationCounter++;
+      const net = getNetworkData();
+      const ts = new Date().toISOString();
+
+      stations.unshift({ id: stationCounter, name: `Station ${stationCounter}`, lat, lon, accuracy: acc, timestamp: ts, net });
+
+      st.textContent = `✓ Station ${stationCounter} recorded (±${acc}m)`;
+      st.className = 'gps-status ok';
+      btn.disabled = false;
+      btn.textContent = '⊕ RECORD STATION';
+
+      renderList();
+      debounceSave();
+      updateNetPreview();
+    }, err => {
+      st.textContent = '✗ GPS error: ' + err.message;
+      st.className = 'gps-status err';
+      btn.disabled = false;
+      btn.textContent = '⊕ RECORD STATION';
+    }, { enableHighAccuracy: true, timeout: 15000 });
+  }
+
+  // --- DELETE / CLEAR ---
+  function deleteStation(id) {
+    stations = stations.filter(s => s.id !== id);
+    renderList();
+    debounceSave();
+  }
+
+  function clearAll() {
+    if (!stations.length) return;
+    if (confirm('Delete all stations? This cannot be undone.')) {
+      stations = []; stationCounter = 0;
+      renderList(); debounceSave();
+    }
+  }
+
+  // --- RENDER ---
+  function renderList() {
+    const el = document.getElementById('stationList');
+    document.getElementById('stationCount').textContent = `${stations.length} station${stations.length !== 1 ? 's' : ''} recorded`;
+    if (!stations.length) { el.innerHTML = '<div class="empty">No stations yet</div>'; return; }
+
+    el.innerHTML = stations.map(s => {
+      const n = s.net;
+      const netRows = n.supported ? `
+        <div>Type: <span class="nv">${n.type}</span> &nbsp; Effective: <span class="nv">${n.effectiveType}</span></div>
+        <div>Downlink: <span class="nv">${n.downlink != null ? n.downlink+' Mbps' : 'n/a'}</span> &nbsp; RTT: <span class="nv">${n.rtt != null ? n.rtt+' ms' : 'n/a'}</span></div>
+        <div>Save Data: <span class="nv">${n.saveData != null ? String(n.saveData) : 'n/a'}</span> &nbsp; Max DL: <span class="nv">${n.downlinkMax != null ? n.downlinkMax+' Mbps' : 'n/a'}</span></div>
+      ` : '<div style="color:#5a3a3a">Network API not supported</div>';
+      return `
+        <div class="station-card">
+          <div class="card-top">
+            <div class="station-name">${s.name}</div>
+            <button class="btn-del" onclick="deleteStation(${s.id})">✕</button>
+          </div>
+          <div class="station-coords">${s.lat.toFixed(5)}, ${s.lon.toFixed(5)} &nbsp;<span style="color:#3a4a7a;font-size:0.68rem">±${s.accuracy}m</span></div>
+          <div class="station-time">${s.timestamp}</div>
+          <div class="station-net">${netRows}</div>
+        </div>`;
+    }).join('');
+  }
+
+  // --- EXPORT CSV ---
+  function exportCSV() {
+    if (!stations.length) { alert('No stations to export.'); return; }
+    const headers = ['Name','Latitude','Longitude','GPS_Accuracy_m','Timestamp','Net_Supported','Type','EffectiveType','Downlink_Mbps','RTT_ms','SaveData','DownlinkMax_Mbps'];
+    const rows = [...stations].reverse().map(s => {
+      const n = s.net;
+      return [
+        s.name, s.lat, s.lon, s.accuracy, s.timestamp, n.supported,
+        n.supported ? n.type : '',
+        n.supported ? n.effectiveType : '',
+        n.supported ? (n.downlink ?? '') : '',
+        n.supported ? (n.rtt ?? '') : '',
+        n.supported ? (n.saveData ?? '') : '',
+        n.supported ? (n.downlinkMax ?? '') : ''
+      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(',');
+    });
+    download('stations.csv', [headers.join(','), ...rows].join('\n'), 'text/csv');
+  }
+
+  // --- EXPORT KML ---
+  function exportKML() {
+    if (!stations.length) { alert('No stations to export.'); return; }
+    const placemarks = [...stations].reverse().map(s => {
+      const n = s.net;
+      const lines = [
+        `Timestamp: ${s.timestamp}`,
+        `GPS Accuracy: ±${s.accuracy}m`,
+        n.supported ? `Net Type: ${n.type}` : 'Network API: Not supported',
+        ...(n.supported ? [
+          `Effective Type: ${n.effectiveType}`,
+          `Downlink: ${n.downlink != null ? n.downlink+' Mbps' : 'n/a'}`,
+          `RTT: ${n.rtt != null ? n.rtt+' ms' : 'n/a'}`,
+          `Save Data: ${n.saveData != null ? n.saveData : 'n/a'}`,
+          `Max Downlink: ${n.downlinkMax != null ? n.downlinkMax+' Mbps' : 'n/a'}`
+        ] : [])
+      ].join('\n');
+      return `  <Placemark>
+    <name>${s.name}</name>
+    <description><![CDATA[<pre style="font-family:sans-serif;font-size:13px">${lines}</pre>]]></description>
+    <Point><coordinates>${s.lon},${s.lat},0</coordinates></Point>
+  </Placemark>`;
+    }).join('\n');
+
+    const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>Network Stations</name>
+  <description>Exported from Network Station Logger</description>
+${placemarks}
+</Document>
+</kml>`;
+    download('stations.kml', kml, 'application/vnd.google-earth.kml+xml');
+  }
+
+  function download(filename, content, mime) {
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(new Blob([content],{type:mime})), download: filename });
+    a.click(); URL.revokeObjectURL(a.href);
+  }
+
+  // --- HELP ---
+  function toggleHelp() {
+    document.getElementById('helpModal').classList.toggle('open');
+  }
+
+  // --- INIT ---
+  loadFromStorage();
+  renderList();
+  updateNetPreview();
+  if (navigator.connection) navigator.connection.addEventListener('change', updateNetPreview);
+</script>
+</body>
+</html>
