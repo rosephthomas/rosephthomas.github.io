@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GPS Button Logger</title>
+  <style>
+    :root {
+      --bg: #edf2f4;
+      --card: #ffffff;
+      --surface: #f8fbfc;
+      --text: #2b2d42;
+      --muted: #5c677d;
+      --border: #8d99ae;
+      --primary: #2b2d42;
+      --primary-text: #edf2f4;
+      --secondary: #8d99ae;
+      --secondary-text: #2b2d42;
+      --accent: #ef233c;
+      --accent-dark: #d80032;
+      --success: #2b2d42;
+      --success-text: #edf2f4;
+      --danger: #d80032;
+      --danger-text: #ffffff;
+      --status-bg: #dfe7ea;
+      --status-text: #2b2d42;
+      --shadow: rgba(43, 45, 66, 0.15);
+      --overlay: rgba(43, 45, 66, 0.55);
+    }
+
+    body.dark-mode {
+      --bg: #2b2d42;
+      --card: #353754;
+      --surface: #41445f;
+      --text: #edf2f4;
+      --muted: #c9d1d9;
+      --border: #8d99ae;
+      --primary: #edf2f4;
+      --primary-text: #2b2d42;
+      --secondary: #8d99ae;
+      --secondary-text: #111827;
+      --accent: #ef233c;
+      --accent-dark: #d80032;
+      --success: #edf2f4;
+      --success-text: #2b2d42;
+      --danger: #ef233c;
+      --danger-text: #ffffff;
+      --status-bg: #41445f;
+      --status-text: #edf2f4;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --overlay: rgba(0, 0, 0, 0.65);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 14px var(--shadow);
+      border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 700px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    input, textarea, button {
+      width: 100%;
+      font-size: 16px;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--muted);
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    button {
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      transition: transform 0.05s ease, opacity 0.15s ease, background 0.2s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: var(--primary-text);
+    }
+
+    .btn-secondary {
+      background: var(--secondary);
+      color: var(--secondary-text);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: var(--success-text);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: var(--danger-text);
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .record-table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    th, td {
+      border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+      text-align: left;
+      padding: 8px;
+      vertical-align: top;
+    }
+
+    th {
+      background: color-mix(in srgb, var(--surface) 85%, var(--secondary) 15%);
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .inline-actions > button {
+      width: auto;
+      min-width: 120px;
+    }
+
+    .status {
+      padding: 10px 12px;
+      border-radius: 8px;
+      margin-top: 8px;
+      background: var(--status-bg);
+      color: var(--status-text);
+      font-size: 14px;
+      border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+    }
+
+    .small {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .button-row input {
+      flex: 1;
+    }
+
+    .help-block {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card);
+      color: var(--text);
+      width: 100%;
+      max-width: 800px;
+      max-height: 85vh;
+      overflow: auto;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 8px 24px var(--shadow);
+      border: 1px solid color-mix(in srgb, var(--border) 40%, transparent);
+    }
+
+    .modal h2 {
+      margin-top: 0;
+    }
+
+    .modal ul {
+      padding-left: 20px;
+      line-height: 1.5;
+    }
+
+    .modal .inline-actions {
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>GPS Button Logger</h1>
+
+    <div class="top-actions">
+      <button id="themeToggleBtn" class="btn-secondary" style="width:auto;">Toggle Light/Dark Mode</button>
+      <button id="helpBtn" class="btn-accent" style="width:auto;">Help</button>
+      <button id="resetProjectBtn" class="btn-danger" style="width:auto;">Reset Project</button>
+    </div>
+
+    <div class="card">
+      <h2>Project Info</h2>
+      <div class="grid grid-2">
+        <div>
+          <label for="projectName">Project Name</label>
+          <input id="projectName" type="text" placeholder="Enter project name" />
+        </div>
+        <div>
+          <label for="technicianName">Technician</label>
+          <input id="technicianName" type="text" placeholder="Enter technician name" />
+        </div>
+      </div>
+      <div class="status" id="status">
+        Ready. Grant location permission when prompted.
+      </div>
+      <div class="small" style="margin-top:8px;">
+        Coordinates are rounded to 5 decimal places. Session data is auto-saved in browser local storage.
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Manage Buttons</h2>
+      <div class="grid">
+        <div>
+          <label for="bulkButtonInput">Add Buttons in Bulk</label>
+          <textarea id="bulkButtonInput" placeholder="Example:
+Pole
+Splice
+Slack Loop
+
+Or:
+Pole, Splice, Slack Loop"></textarea>
+          <div class="help-block">
+            Enter one button label per line, comma-separated labels, or a mix of both.
+          </div>
+        </div>
+        <div class="inline-actions">
+          <button id="bulkAddButtonBtn" class="btn-primary">Add Buttons</button>
+          <button id="clearButtonsBtn" class="btn-danger">Delete All Buttons</button>
+        </div>
+      </div>
+
+      <div style="margin-top:16px;">
+        <h3>Current Button Labels</h3>
+        <div id="buttonManagerList"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Capture Points</h2>
+      <div class="small">Tap any button below to capture your current GPS location.</div>
+      <div id="captureButtons" class="button-grid"></div>
+    </div>
+
+    <div class="card">
+      <h2>Records</h2>
+      <div class="inline-actions" style="margin-bottom:12px;">
+        <button id="exportCsvBtn" class="btn-success">Export CSV</button>
+        <button id="exportKmlBtn" class="btn-success">Export KML</button>
+        <button id="clearRecordsBtn" class="btn-danger">Delete All Records</button>
+      </div>
+      <div class="record-table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Button Name</th>
+              <th>Latitude</th>
+              <th>Longitude</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Project</th>
+              <th>Technician</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpModalBackdrop" class="modal-backdrop" aria-hidden="true">
+    <div class="modal">
+      <h2>Help</h2>
+      <p>This page is used to create custom GPS capture buttons, log points, and export data as CSV or KML.</p>
+
+      <h3>Top Buttons</h3>
+      <ul>
+        <li><strong>Toggle Light/Dark Mode</strong> — switches between light mode and dark mode. Your preference is saved automatically.</li>
+        <li><strong>Help</strong> — opens this help window.</li>
+        <li><strong>Reset Project</strong> — clears all current project information, button definitions, and recorded GPS points.</li>
+      </ul>
+
+      <h3>Project Info</h3>
+      <ul>
+        <li><strong>Project Name</strong> — used in records and export file names.</li>
+        <li><strong>Technician</strong> — stored with each point and included in exports.</li>
+      </ul>
+
+      <h3>Manage Buttons</h3>
+      <ul>
+        <li><strong>Add Buttons in Bulk</strong> — enter labels separated by new lines or commas.</li>
+        <li><strong>Add Buttons</strong> — creates capture buttons from the text field.</li>
+        <li><strong>Delete All Buttons</strong> — removes all button definitions.</li>
+        <li><strong>Edit</strong> — changes an existing button label.</li>
+        <li><strong>Delete</strong> — removes one button label.</li>
+      </ul>
+
+      <h3>Capture Points</h3>
+      <ul>
+        <li>Tap any generated button to capture the current GPS position.</li>
+        <li>The saved point is labeled with that button name.</li>
+        <li>Coordinates are rounded to 5 decimal places.</li>
+      </ul>
+
+      <h3>Records</h3>
+      <ul>
+        <li><strong>Export CSV</strong> — downloads all records as a CSV file.</li>
+        <li><strong>Export KML</strong> — downloads all records as a KML file grouped into subfolders by button name, inside a parent folder named after the project.</li>
+        <li><strong>Delete All Records</strong> — removes all captured points.</li>
+        <li><strong>Delete</strong> in a row — removes a single record.</li>
+      </ul>
+
+      <h3>Saving Behavior</h3>
+      <ul>
+        <li>Project name, technician, theme, buttons, and records are automatically saved to local storage.</li>
+        <li>If the browser reloads or closes, the session is restored the next time the page opens.</li>
+      </ul>
+
+      <div class="inline-actions">
+        <button id="closeHelpBtn" class="btn-primary" style="width:auto;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEYS = {
+      buttons: 'gpsButtonLogger_buttons',
+      records: 'gpsButtonLogger_records',
+      projectName: 'gpsButtonLogger_projectName',
+      technicianName: 'gpsButtonLogger_technicianName',
+      theme: 'gpsButtonLogger_theme'
+    };
+
+    let buttons = loadJson(STORAGE_KEYS.buttons, []);
+    let records = loadJson(STORAGE_KEYS.records, []);
+
+    const projectNameEl = document.getElementById('projectName');
+    const technicianNameEl = document.getElementById('technicianName');
+    const bulkButtonInputEl = document.getElementById('bulkButtonInput');
+    const bulkAddButtonBtn = document.getElementById('bulkAddButtonBtn');
+    const clearButtonsBtn = document.getElementById('clearButtonsBtn');
+    const buttonManagerList = document.getElementById('buttonManagerList');
+    const captureButtons = document.getElementById('captureButtons');
+    const recordsTbody = document.getElementById('recordsTbody');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const exportKmlBtn = document.getElementById('exportKmlBtn');
+    const clearRecordsBtn = document.getElementById('clearRecordsBtn');
+    const resetProjectBtn = document.getElementById('resetProjectBtn');
+    const helpBtn = document.getElementById('helpBtn');
+    const closeHelpBtn = document.getElementById('closeHelpBtn');
+    const helpModalBackdrop = document.getElementById('helpModalBackdrop');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+    const statusEl = document.getElementById('status');
+
+    init();
+
+    function init() {
+      restoreSession();
+      bindEvents();
+      renderButtons();
+      renderRecords();
+      applySavedTheme();
+    }
+
+    function bindEvents() {
+      bulkAddButtonBtn.addEventListener('click', bulkAddButtons);
+      clearButtonsBtn.addEventListener('click', clearAllButtons);
+      exportCsvBtn.addEventListener('click', exportCSV);
+      exportKmlBtn.addEventListener('click', exportKML);
+      clearRecordsBtn.addEventListener('click', clearAllRecords);
+      resetProjectBtn.addEventListener('click', resetProject);
+      helpBtn.addEventListener('click', openHelp);
+      closeHelpBtn.addEventListener('click', closeHelp);
+      themeToggleBtn.addEventListener('click', toggleTheme);
+
+      helpModalBackdrop.addEventListener('click', (e) => {
+        if (e.target === helpModalBackdrop) closeHelp();
+      });
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeHelp();
+      });
+
+      projectNameEl.addEventListener('input', autoSaveSession);
+      technicianNameEl.addEventListener('input', autoSaveSession);
+      bulkButtonInputEl.addEventListener('input', autoSaveDraftOnly);
+    }
+
+    function loadJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function restoreSession() {
+      projectNameEl.value = localStorage.getItem(STORAGE_KEYS.projectName) || '';
+      technicianNameEl.value = localStorage.getItem(STORAGE_KEYS.technicianName) || '';
+    }
+
+    function autoSaveSession() {
+      localStorage.setItem(STORAGE_KEYS.projectName, projectNameEl.value);
+      localStorage.setItem(STORAGE_KEYS.technicianName, technicianNameEl.value);
+      localStorage.setItem(STORAGE_KEYS.buttons, JSON.stringify(buttons));
+      localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(records));
+    }
+
+    function autoSaveDraftOnly() {
+      // Draft field content is optional to persist. If wanted later, can add a key here.
+    }
+
+    function saveButtons() {
+      localStorage.setItem(STORAGE_KEYS.buttons, JSON.stringify(buttons));
+    }
+
+    function saveRecords() {
+      localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(records));
+    }
+
+    function setStatus(msg, isError = false) {
+      statusEl.textContent = msg;
+      if (isError) {
+        statusEl.style.background = 'color-mix(in srgb, var(--danger) 10%, var(--card) 90%)';
+        statusEl.style.color = 'var(--text)';
+      } else {
+        statusEl.style.background = 'var(--status-bg)';
+        statusEl.style.color = 'var(--status-text)';
+      }
+    }
+
+    function parseBulkButtons(input) {
+      return input
+        .split(/[\n,]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function bulkAddButtons() {
+      const input = bulkButtonInputEl.value.trim();
+
+      if (!input) {
+        setStatus('Enter one or more button labels before adding.', true);
+        return;
+      }
+
+      const parsed = parseBulkButtons(input);
+      if (!parsed.length) {
+        setStatus('No valid button labels found.', true);
+        return;
+      }
+
+      let addedCount = 0;
+      let skippedCount = 0;
+
+      parsed.forEach(label => {
+        if (!buttons.includes(label)) {
+          buttons.push(label);
+          addedCount++;
+        } else {
+          skippedCount++;
+        }
+      });
+
+      saveButtons();
+      autoSaveSession();
+      renderButtons();
+      bulkButtonInputEl.value = '';
+
+      if (addedCount && skippedCount) {
+        setStatus(`Added ${addedCount} button(s). Skipped ${skippedCount} duplicate(s).`);
+      } else if (addedCount) {
+        setStatus(`Added ${addedCount} button(s).`);
+      } else {
+        setStatus('All entered button labels were duplicates.', true);
+      }
+    }
+
+    function clearAllButtons() {
+      if (!confirm('Delete all button labels?')) return;
+      buttons = [];
+      saveButtons();
+      autoSaveSession();
+      renderButtons();
+      setStatus('All button labels deleted.');
+    }
+
+    function editButton(index) {
+      const current = buttons[index];
+      const updated = prompt('Edit button label:', current);
+      if (updated === null) return;
+
+      const trimmed = updated.trim();
+      if (!trimmed) {
+        setStatus('Button label cannot be empty.', true);
+        return;
+      }
+
+      if (buttons.some((b, i) => i !== index && b === trimmed)) {
+        setStatus('Another button already has that name.', true);
+        return;
+      }
+
+      buttons[index] = trimmed;
+      saveButtons();
+      autoSaveSession();
+      renderButtons();
+      setStatus(`Updated button "${current}" to "${trimmed}".`);
+    }
+
+    function deleteButton(index) {
+      const label = buttons[index];
+      if (!confirm(`Delete button "${label}"?`)) return;
+      buttons.splice(index, 1);
+      saveButtons();
+      autoSaveSession();
+      renderButtons();
+      setStatus(`Deleted button "${label}".`);
+    }
+
+    function renderButtons() {
+      buttonManagerList.innerHTML = '';
+      captureButtons.innerHTML = '';
+
+      if (!buttons.length) {
+        buttonManagerList.innerHTML = '<div class="small">No buttons defined.</div>';
+        captureButtons.innerHTML = '<div class="small">Add at least one button to start capturing points.</div>';
+        return;
+      }
+
+      buttons.forEach((label, index) => {
+        const managerRow = document.createElement('div');
+        managerRow.className = 'button-row';
+
+        const input = document.createElement('input');
+        input.value = label;
+        input.readOnly = true;
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.className = 'btn-secondary';
+        editBtn.style.width = 'auto';
+        editBtn.addEventListener('click', () => editButton(index));
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.className = 'btn-danger';
+        delBtn.style.width = 'auto';
+        delBtn.addEventListener('click', () => deleteButton(index));
+
+        managerRow.appendChild(input);
+        managerRow.appendChild(editBtn);
+        managerRow.appendChild(delBtn);
+        buttonManagerList.appendChild(managerRow);
+
+        const captureBtn = document.createElement('button');
+        captureBtn.textContent = label;
+        captureBtn.className = 'btn-primary';
+        captureBtn.addEventListener('click', () => captureLocation(label));
+        captureButtons.appendChild(captureBtn);
+      });
+    }
+
+    function captureLocation(buttonLabel) {
+      if (!navigator.geolocation) {
+        setStatus('Geolocation is not supported by this browser.', true);
+        return;
+      }
+
+      const projectName = projectNameEl.value.trim();
+      const technician = technicianNameEl.value.trim();
+
+      setStatus(`Getting location for "${buttonLabel}"...`);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = round5(position.coords.latitude);
+          const lon = round5(position.coords.longitude);
+          const now = new Date();
+
+          const record = {
+            id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+            projectName,
+            technician,
+            buttonName: buttonLabel,
+            latitude: lat,
+            longitude: lon,
+            isoTimestamp: now.toISOString(),
+            localDate: formatDate(now),
+            localTime: formatTime(now)
+          };
+
+          records.push(record);
+          saveRecords();
+          autoSaveSession();
+          renderRecords();
+
+          setStatus(`Recorded "${buttonLabel}" at ${lat}, ${lon}.`);
+        },
+        (error) => {
+          let msg = 'Unable to retrieve location.';
+          if (error.code === 1) msg = 'Location permission denied.';
+          if (error.code === 2) msg = 'Location unavailable.';
+          if (error.code === 3) msg = 'Location request timed out.';
+          setStatus(msg, true);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    function renderRecords() {
+      recordsTbody.innerHTML = '';
+
+      if (!records.length) {
+        recordsTbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="small">No records yet.</td>
+          </tr>
+        `;
+        return;
+      }
+
+      records.forEach((record, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${escapeHtml(record.buttonName)}</td>
+          <td>${record.latitude}</td>
+          <td>${record.longitude}</td>
+          <td>${escapeHtml(record.localDate)}</td>
+          <td>${escapeHtml(record.localTime)}</td>
+          <td>${escapeHtml(record.projectName || '')}</td>
+          <td>${escapeHtml(record.technician || '')}</td>
+          <td><button class="btn-danger" style="width:auto;">Delete</button></td>
+        `;
+
+        tr.querySelector('button').addEventListener('click', () => {
+          deleteRecord(record.id);
+        });
+
+        recordsTbody.appendChild(tr);
+      });
+    }
+
+    function deleteRecord(id) {
+      if (!confirm('Delete this record?')) return;
+      records = records.filter(r => r.id !== id);
+      saveRecords();
+      autoSaveSession();
+      renderRecords();
+      setStatus('Record deleted.');
+    }
+
+    function clearAllRecords() {
+      if (!confirm('Delete all records?')) return;
+      records = [];
+      saveRecords();
+      autoSaveSession();
+      renderRecords();
+      setStatus('All records deleted.');
+    }
+
+    function resetProject() {
+      if (!confirm('Reset the entire project? This will clear project name, technician, buttons, and records.')) return;
+
+      projectNameEl.value = '';
+      technicianNameEl.value = '';
+      bulkButtonInputEl.value = '';
+      buttons = [];
+      records = [];
+
+      localStorage.removeItem(STORAGE_KEYS.projectName);
+      localStorage.removeItem(STORAGE_KEYS.technicianName);
+      localStorage.removeItem(STORAGE_KEYS.buttons);
+      localStorage.removeItem(STORAGE_KEYS.records);
+
+      renderButtons();
+      renderRecords();
+      setStatus('Project reset complete.');
+    }
+
+    function openHelp() {
+      helpModalBackdrop.classList.add('show');
+      helpModalBackdrop.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeHelp() {
+      helpModalBackdrop.classList.remove('show');
+      helpModalBackdrop.setAttribute('aria-hidden', 'true');
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem(STORAGE_KEYS.theme, isDark ? 'dark' : 'light');
+    }
+
+    function applySavedTheme() {
+      const savedTheme = localStorage.getItem(STORAGE_KEYS.theme);
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+    }
+
+    function round5(num) {
+      return Number(num).toFixed(5);
+    }
+
+    function formatDate(date) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+
+    function formatTime(date) {
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mm = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${hh}:${mm}:${ss}`;
+    }
+
+    function fileDateStamp(date = new Date()) {
+      const y = date.getFullYear();
+      const m = String(date.getMonth() + 1).padStart(2, '0');
+      const d = String(date.getDate()).padStart(2, '0');
+      return `${y}${m}${d}`;
+    }
+
+    function fileTimeStamp(date = new Date()) {
+      const hh = String(date.getHours()).padStart(2, '0');
+      const mm = String(date.getMinutes()).padStart(2, '0');
+      const ss = String(date.getSeconds()).padStart(2, '0');
+      return `${hh}${mm}${ss}`;
+    }
+
+    function sanitizeFilePart(value) {
+      return (value || 'project')
+        .trim()
+        .replace(/\s+/g, '_')
+        .replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+
+    function makeFileName(extension) {
+      const project = sanitizeFilePart(projectNameEl.value) || 'project';
+      return `${project}_${fileDateStamp()}_${fileTimeStamp()}.${extension}`;
+    }
+
+    function exportCSV() {
+      if (!records.length) {
+        setStatus('No records to export.', true);
+        return;
+      }
+
+      const headers = [
+        'projectName',
+        'technician',
+        'buttonName',
+        'latitude',
+        'longitude',
+        'localDate',
+        'localTime',
+        'isoTimestamp'
+      ];
+
+      const rows = records.map(r => [
+        r.projectName || '',
+        r.technician || '',
+        r.buttonName || '',
+        r.latitude || '',
+        r.longitude || '',
+        r.localDate || '',
+        r.localTime || '',
+        r.isoTimestamp || ''
+      ]);
+
+      const csv = [
+        headers.join(','),
+        ...rows.map(row => row.map(csvEscape).join(','))
+      ].join('\n');
+
+      downloadFile(csv, makeFileName('csv'), 'text/csv;charset=utf-8;');
+      setStatus('CSV exported.');
+    }
+
+    function csvEscape(value) {
+      const str = String(value ?? '');
+      if (/[",\n]/.test(str)) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    function exportKML() {
+      if (!records.length) {
+        setStatus('No records to export.', true);
+        return;
+      }
+
+      const project = projectNameEl.value.trim() || 'Project';
+      const grouped = groupBy(records, r => r.buttonName || 'Unlabeled');
+
+      let folderBlocks = '';
+      Object.keys(grouped).sort().forEach(buttonName => {
+        const placemarks = grouped[buttonName].map(r => `
+          <Placemark>
+            <name>${xmlEscape(r.buttonName)}</name>
+            <description>${xmlEscape(
+              `Project: ${r.projectName || ''}\nTechnician: ${r.technician || ''}\nDate: ${r.localDate || ''}\nTime: ${r.localTime || ''}`
+            )}</description>
+            <Point>
+              <coordinates>${r.longitude},${r.latitude},0</coordinates>
+            </Point>
+          </Placemark>
+        `).join('');
+
+        folderBlocks += `
+          <Folder>
+            <name>${xmlEscape(buttonName)}</name>
+            ${placemarks}
+          </Folder>
+        `;
+      });
+
+      const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+  <Document>
+    <name>${xmlEscape(project)}</name>
+    <Folder>
+      <name>${xmlEscape(project)}</name>
+      <description>${xmlEscape(`Technician: ${technicianNameEl.value.trim() || ''}`)}</description>
+      ${folderBlocks}
+    </Folder>
+  </Document>
+</kml>`;
+
+      downloadFile(kml, makeFileName('kml'), 'application/vnd.google-earth.kml+xml;charset=utf-8;');
+      setStatus('KML exported.');
+    }
+
+    function groupBy(arr, keyFn) {
+      return arr.reduce((acc, item) => {
+        const key = keyFn(item);
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+    }
+
+    function xmlEscape(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function downloadFile(content, filename, mimeType) {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
