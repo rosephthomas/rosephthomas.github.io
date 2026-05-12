@@ -1,0 +1,1883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Walkout</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    :root {
+      --bg: #edf2f4;
+      --card: #ffffff;
+      --surface: #f8fbfc;
+      --text: #2b2d42;
+      --muted: #5c677d;
+      --border: #8d99ae;
+      --primary: #2b2d42;
+      --primary-text: #edf2f4;
+      --secondary: #8d99ae;
+      --secondary-text: #2b2d42;
+      --accent: #ef233c;
+      --accent-dark: #d80032;
+      --success: #2b2d42;
+      --success-text: #edf2f4;
+      --danger: #d80032;
+      --danger-text: #ffffff;
+      --status-bg: #dfe7ea;
+      --status-text: #2b2d42;
+      --shadow: rgba(43, 45, 66, 0.15);
+      --overlay: rgba(43, 45, 66, 0.55);
+    }
+
+    body.dark-mode {
+      --bg: #2b2d42;
+      --card: #353754;
+      --surface: #41445f;
+      --text: #edf2f4;
+      --muted: #c9d1d9;
+      --border: #8d99ae;
+      --primary: #edf2f4;
+      --primary-text: #2b2d42;
+      --secondary: #8d99ae;
+      --secondary-text: #111827;
+      --accent: #ef233c;
+      --accent-dark: #d80032;
+      --success: #edf2f4;
+      --success-text: #2b2d42;
+      --danger: #ef233c;
+      --danger-text: #ffffff;
+      --status-bg: #41445f;
+      --status-text: #edf2f4;
+      --shadow: rgba(0, 0, 0, 0.35);
+      --overlay: rgba(0, 0, 0, 0.65);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: var(--bg);
+      color: var(--text);
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    h1 {
+      font-size: 20px;
+      margin: 8px 0 10px;
+      color: var(--text);
+    }
+
+    h2 {
+      font-size: 16px;
+      margin: 0 0 8px;
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 10px;
+      box-shadow: 0 1px 3px var(--shadow);
+      padding: 12px;
+      margin-bottom: 12px;
+      border: 1px solid var(--border);
+      transition: background 0.2s ease, border-color 0.2s ease;
+    }
+
+    label {
+      display: block;
+      margin: 6px 0 3px;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 7px 8px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      font-size: 14px;
+      background-color: var(--surface);
+      color: var(--text);
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+      color: var(--muted);
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    button {
+      padding: 7px 10px;
+      margin: 4px 2px;
+      border: none;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1.2;
+      white-space: nowrap;
+      transition: transform 0.05s ease, opacity 0.15s ease, background 0.2s ease;
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button.primary {
+      background-color: var(--primary);
+      color: var(--primary-text);
+      font-weight: 600;
+    }
+
+    button.secondary {
+      background-color: var(--secondary);
+      color: var(--secondary-text);
+      font-weight: 500;
+    }
+
+    button.success {
+      background-color: var(--success);
+      color: var(--success-text);
+      font-weight: 600;
+    }
+
+    button.danger {
+      background-color: var(--danger);
+      color: var(--danger-text);
+      font-weight: 600;
+    }
+
+    button.accent {
+      background-color: var(--accent);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    button:disabled {
+      background-color: var(--muted);
+      color: var(--surface);
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 4px;
+      font-size: 12px;
+      color: var(--status-text);
+      display: block;
+      padding: 8px 10px;
+      background-color: var(--status-bg);
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    #status.error {
+      background-color: color-mix(in srgb, var(--danger) 10%, var(--card) 90%);
+      color: var(--text);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 6px;
+      font-size: 12px;
+      background: var(--card);
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 4px;
+      text-align: left;
+      vertical-align: middle;
+      color: var(--text);
+    }
+
+    th {
+      background-color: var(--surface);
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .name-input,
+    .coord-input {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .small-text {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .top-actions button {
+      width: auto;
+      margin: 0;
+    }
+
+    #canvasContainer {
+      position: relative;
+      width: 100%;
+    }
+
+    #mapCanvas {
+      width: 100%;
+      max-width: 100%;
+      height: 260px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+      border-radius: 8px;
+      display: block;
+    }
+
+    #autosaveIndicator {
+      position: fixed;
+      top: 6px;
+      right: 6px;
+      background: var(--card);
+      border-radius: 16px;
+      padding: 4px 8px;
+      box-shadow: 0 1px 3px var(--shadow);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      z-index: 1000;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+
+    #autosaveIndicatorDot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: red;
+    }
+
+    #autosaveIndicatorText {
+      white-space: nowrap;
+    }
+
+    #clearSessionContainer {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 8px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .button-row input {
+      flex: 1;
+    }
+
+    .button-row button {
+      width: auto;
+      min-width: 80px;
+      margin: 0;
+    }
+
+    .help-block {
+      margin-top: 6px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: var(--overlay);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1000;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--card);
+      color: var(--text);
+      width: 100%;
+      max-width: 600px;
+      max-height: 85vh;
+      overflow: auto;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 8px 24px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .modal h3 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 16px;
+      color: var(--text);
+    }
+
+    .modal ul {
+      padding-left: 20px;
+      line-height: 1.5;
+    }
+
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .grid-2 {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 700px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .button-grid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      }
+
+      body {
+        padding: 8px;
+      }
+
+      .card {
+        padding: 10px;
+      }
+    }
+
+    @media (min-width: 768px) {
+      body {
+        padding: 16px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      .card {
+        padding: 16px;
+        margin-bottom: 14px;
+      }
+
+      #mapCanvas {
+        height: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="autosaveIndicator">
+    <div id="autosaveIndicatorDot"></div>
+    <div id="autosaveIndicatorText">Unsaved changes</div>
+  </div>
+
+  <div class="top-actions">
+    <button id="themeToggleBtn" class="secondary">Toggle Light/Dark</button>
+    <button id="helpButton" class="accent">Help</button>
+  </div>
+
+  <h1>Smart Walkout</h1>
+
+  <div class="card">
+    <h2>Project Info</h2>
+    <div class="grid grid-2">
+      <div>
+        <label for="projectName">Project ID / Name</label>
+        <input type="text" id="projectName" placeholder="e.g., Smart Walkout – Job 1234">
+      </div>
+      <div>
+        <label for="technicianName">Technician</label>
+        <input type="text" id="technicianName" placeholder="e.g., Your Name">
+      </div>
+    </div>
+    <div id="status">Ready. Grant location permission when prompted.</div>
+  </div>
+
+  <div class="card">
+    <h2>Record Current Location</h2>
+
+    <label for="pointName">Location Name</label>
+    <input type="text" id="pointName" placeholder="e.g., Site A">
+
+    <div style="margin-top: 8px;">
+      <button class="primary" id="recordBtn" type="button">Record Current GPS</button>
+      <button class="secondary" id="startTrackBtn" type="button">Start Track</button>
+      <button class="secondary" id="stopTrackBtn" type="button" disabled>Stop Track</button>
+    </div>
+
+    <p class="small-text">
+      Browser will prompt for location access. You can edit point names and coordinates directly in the table below.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Quick Capture Buttons</h2>
+    <div class="grid">
+      <div>
+        <label for="bulkButtonInput">Add Buttons (one per line or comma-separated)</label>
+        <textarea id="bulkButtonInput" placeholder="Example:
+Pole
+Splice
+Slack Loop"></textarea>
+        <div class="help-block">Enter labels separated by new lines or commas.</div>
+      </div>
+      <div>
+        <button class="primary" id="bulkAddButtonBtn" type="button">Add Buttons</button>
+        <button class="danger" id="clearButtonsBtn" type="button">Delete All Buttons</button>
+      </div>
+    </div>
+
+    <h3 style="margin-top: 12px; margin-bottom: 8px;">Button Manager</h3>
+    <div id="buttonManagerList"></div>
+
+    <h3 style="margin-top: 12px; margin-bottom: 8px;">Quick Tap to Capture</h3>
+    <div id="captureButtons" class="button-grid"></div>
+  </div>
+
+  <div class="card">
+    <h2>Inventory (Stations, Lines, Tracks)</h2>
+    <table id="inventoryTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Name</th>
+          <th>Col A</th>
+          <th>Col B</th>
+          <th>Distance (ft)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="inventoryTbody"></tbody>
+    </table>
+    <p class="small-text">
+      Type legend: ● Station, ━ Line between stations, ≋ Tracked polyline.
+      <br>
+      For stations, Col A/B show editable Lat/Lon. For lines, Col A/B show From/To or polyline info.
+    </p>
+  </div>
+
+  <div class="card">
+    <h2>Canvas View (Tap to Connect Points)</h2>
+    <p class="small-text">
+      Tap one point, then another to propose a connection. A dialog will appear:
+      enter an optional name and confirm to create the line, or cancel to abort.
+      Tracks recorded with Start/Stop Track appear as polylines. Distances are shown in feet.
+    </p>
+    <div id="canvasContainer">
+      <canvas id="mapCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Export &amp; Session</h2>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px;">
+      <button class="success" id="exportKmlBtn" type="button">Export to .kml</button>
+      <button class="success" id="exportCsvBtn" type="button">Export to .csv</button>
+      <button class="danger" id="clearSessionBtn" type="button">Clear Session</button>
+    </div>
+    <p class="small-text">
+      Export will include all current stations and links (including tracked polylines).
+      Clear Session permanently deletes this project (points, links, and saved data) from this browser.
+    </p>
+  </div>
+
+  <div id="linkModalOverlay" class="modal-backdrop">
+    <div class="modal">
+      <h3>New Connection</h3>
+      <p id="linkModalInfo" class="small-text"></p>
+      <label for="linkNameInput">Connection Name (optional)</label>
+      <input type="text" id="linkNameInput" placeholder="e.g., Segment 1">
+      <div style="margin-top: 10px; text-align: right;">
+        <button class="secondary" id="linkCancelBtn" type="button">Cancel</button>
+        <button class="primary" id="linkConfirmBtn" type="button">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="helpOverlay" class="modal-backdrop">
+    <div class="modal">
+      <h3>Smart Walkout – Quick Guide</h3>
+      <p><strong>1. Project Info</strong></p>
+      <ul>
+        <li>Enter your project name and technician name for record-keeping.</li>
+      </ul>
+
+      <p><strong>2. Add Stations</strong></p>
+      <ul>
+        <li><strong>Record Current GPS</strong> – enter a location name and tap to capture your current position as a station.</li>
+        <li>Edit a station's name and coordinates directly in the inventory table (Type = ●).</li>
+      </ul>
+
+      <p><strong>3. Connect Stations</strong></p>
+      <ul>
+        <li>Use the canvas to connect stations: tap one, then another.</li>
+        <li>Enter an optional connection name and confirm.</li>
+        <li>The line (Type = ━) shows the approximate distance in feet.</li>
+      </ul>
+
+      <p><strong>4. Track Polylines</strong></p>
+      <ul>
+        <li>Tap <em>Start Track</em> to begin recording your path.</li>
+        <li>A vertex is recorded at your location when tracking begins, and then each time you move ~0.00001° from the last vertex.</li>
+        <li>Tap <em>Stop Track</em> to stop and add a final vertex at your current location.</li>
+        <li>The resulting polyline (Type = ≋) appears in the inventory table and on the canvas with total distance in feet.</li>
+      </ul>
+
+      <p><strong>5. Quick Capture Buttons</strong></p>
+      <ul>
+        <li>Define custom buttons in bulk by entering labels (one per line or comma-separated).</li>
+        <li>Tap any button to capture a GPS point with that button label.</li>
+        <li>All captured points are added to the inventory.</li>
+      </ul>
+
+      <p><strong>6. View &amp; Edit Inventory</strong></p>
+      <ul>
+        <li>The inventory table shows stations, lines, tracks, their names, endpoints/info, and distance.</li>
+        <li>You can rename or delete any record from this list.</li>
+      </ul>
+
+      <p><strong>7. Auto-Save &amp; Export</strong></p>
+      <ul>
+        <li>Changes are auto-saved to your browser after a short delay.</li>
+        <li>Export to KML to view stations and lines in Google Earth Pro.</li>
+        <li>Export to CSV for spreadsheet analysis.</li>
+      </ul>
+
+      <p><strong>8. Theme &amp; Clear Session</strong></p>
+      <ul>
+        <li>Use <em>Toggle Light/Dark</em> to switch themes (preference is saved).</li>
+        <li>Use <em>Clear Session</em> to wipe all data and start fresh on this device.</li>
+      </ul>
+
+      <button class="secondary" id="helpBlobCloseBtn" type="button">Close Help</button>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'gps_canvas_links_state_v2';
+    const BUTTON_STORAGE_KEY = 'gpsButtonLogger_buttons';
+    const THEME_STORAGE_KEY = 'gpsButtonLogger_theme';
+
+    let isDirty = false;
+    let lastSavedAt = null;
+    let autosaveTimerId = null;
+    const AUTOSAVE_DELAY_MS = 1000;
+
+    let buttons = loadJson(BUTTON_STORAGE_KEY, []);
+
+    const autosaveIndicatorDot = document.getElementById('autosaveIndicatorDot');
+    const autosaveIndicatorText = document.getElementById('autosaveIndicatorText');
+
+    function formatTimestamp(date) {
+      if (!date) return 'Never';
+      const pad = n => String(n).padStart(2, '0');
+      const y = date.getFullYear();
+      const m = pad(date.getMonth() + 1);
+      const d = pad(date.getDate());
+      const h = pad(date.getHours());
+      const min = pad(date.getMinutes());
+      const s = pad(date.getSeconds());
+      return `${y}-${m}-${d} ${h}:${min}:${s}`;
+    }
+
+    function getDateStampForFilename() {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const mm = pad(now.getMonth() + 1);
+      const dd = pad(now.getDate());
+      const yyyy = now.getFullYear();
+      return `${mm}-${dd}-${yyyy}`;
+    }
+
+    function updateAutosaveIndicator() {
+      if (isDirty) {
+        autosaveIndicatorDot.style.background = 'red';
+        autosaveIndicatorText.textContent =
+          `Unsaved changes` +
+          (lastSavedAt ? ` (last auto-save: ${formatTimestamp(lastSavedAt)})` : '');
+      } else {
+        autosaveIndicatorDot.style.background = '#00c851';
+        autosaveIndicatorText.textContent =
+          `Saved` +
+          (lastSavedAt ? ` (last auto-save: ${formatTimestamp(lastSavedAt)})` : '');
+      }
+    }
+
+    function markDirty() {
+      isDirty = true;
+      updateAutosaveIndicator();
+      if (autosaveTimerId) {
+        clearTimeout(autosaveTimerId);
+      }
+      autosaveTimerId = setTimeout(() => {
+        saveState();
+      }, AUTOSAVE_DELAY_MS);
+    }
+
+    let points = [];
+    let links = [];
+    let nextPointId = 1;
+    let nextLinkId = 1;
+
+    const projectNameInput = document.getElementById('projectName');
+    const technicianNameInput = document.getElementById('technicianName');
+    const pointNameInput = document.getElementById('pointName');
+    const statusSpan = document.getElementById('status');
+    const inventoryTbody = document.getElementById('inventoryTbody');
+    const recordBtn = document.getElementById('recordBtn');
+    const exportKmlBtn = document.getElementById('exportKmlBtn');
+    const exportCsvBtn = document.getElementById('exportCsvBtn');
+    const clearSessionBtn = document.getElementById('clearSessionBtn');
+
+    const startTrackBtn = document.getElementById('startTrackBtn');
+    const stopTrackBtn = document.getElementById('stopTrackBtn');
+
+    const bulkButtonInputEl = document.getElementById('bulkButtonInput');
+    const bulkAddButtonBtn = document.getElementById('bulkAddButtonBtn');
+    const clearButtonsBtn = document.getElementById('clearButtonsBtn');
+    const buttonManagerList = document.getElementById('buttonManagerList');
+    const captureButtons = document.getElementById('captureButtons');
+
+    const canvas = document.getElementById('mapCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const linkModalOverlay = document.getElementById('linkModalOverlay');
+    const linkModalInfo = document.getElementById('linkModalInfo');
+    const linkNameInputModal = document.getElementById('linkNameInput');
+    const linkCancelBtn = document.getElementById('linkCancelBtn');
+    const linkConfirmBtn = document.getElementById('linkConfirmBtn');
+
+    const helpButton = document.getElementById('helpButton');
+    const helpOverlay = document.getElementById('helpOverlay');
+    const helpBlobCloseBtn = document.getElementById('helpBlobCloseBtn');
+    const themeToggleBtn = document.getElementById('themeToggleBtn');
+
+    let pendingFromPoint = null;
+    let pendingToPoint = null;
+
+    let minLatGlobal = null;
+    let maxLatGlobal = null;
+    let minLonGlobal = null;
+    let maxLonGlobal = null;
+    const CANVAS_PADDING = 20;
+
+    let isTracking = false;
+    let trackWatchId = null;
+    let currentTrack = [];
+    const MIN_TRACK_DELTA_DEGREES = 0.00001;
+
+    projectNameInput.addEventListener('input', markDirty);
+    technicianNameInput.addEventListener('input', markDirty);
+
+    function loadJson(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
+    function saveState() {
+      const state = {
+        projectName: projectNameInput.value || '',
+        technicianName: technicianNameInput.value || '',
+        points: points.map(p => ({
+          id: p.id,
+          name: p.name,
+          lat: p.lat,
+          lon: p.lon
+        })),
+        links: links.map(l => ({
+          id: l.id,
+          name: l.name,
+          fromId: l.fromId,
+          toId: l.toId,
+          distanceFeet: l.distanceFeet,
+          polyline: l.polyline || null,
+          buttonCapture: l.buttonCapture || null
+        })),
+        nextPointId,
+        nextLinkId,
+        lastSavedAt: Date.now()
+      };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        lastSavedAt = new Date(state.lastSavedAt);
+        isDirty = false;
+        updateAutosaveIndicator();
+      } catch (e) {
+        console.warn('Could not save state to localStorage:', e);
+      }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        const state = JSON.parse(raw);
+        if (!state || !Array.isArray(state.points) || !Array.isArray(state.links)) return;
+
+        if (state.projectName) {
+          projectNameInput.value = state.projectName;
+        }
+        if (state.technicianName) {
+          technicianNameInput.value = state.technicianName;
+        }
+
+        points = state.points.map(p => ({
+          id: p.id,
+          name: p.name,
+          lat: p.lat,
+          lon: p.lon,
+          x: null,
+          y: null
+        }));
+
+        links = state.links.map(l => ({
+          id: l.id,
+          name: l.name,
+          fromId: l.fromId,
+          toId: l.toId,
+          distanceFeet: l.distanceFeet,
+          polyline: l.polyline || null,
+          buttonCapture: l.buttonCapture || null
+        }));
+
+        nextPointId = state.nextPointId || (points.reduce((m,p) => Math.max(m,p.id), 0) + 1);
+        nextLinkId = state.nextLinkId || (links.reduce((m,l) => Math.max(m,l.id), 0) + 1);
+
+        if (state.lastSavedAt) {
+          lastSavedAt = new Date(state.lastSavedAt);
+        }
+      } catch (e) {
+        console.warn('Could not load state from localStorage:', e);
+      }
+    }
+
+    function setStatus(msg, isError = false) {
+      statusSpan.textContent = msg;
+      if (isError) {
+        statusSpan.classList.add('error');
+      } else {
+        statusSpan.classList.remove('error');
+      }
+    }
+
+    function clearSession() {
+      const ok = window.confirm(
+        'This will delete ALL points, links, and saved session data for Smart Walkout on this device.\n\n' +
+        'This cannot be undone.\n\nDo you want to continue?'
+      );
+      if (!ok) return;
+
+      points = [];
+      links = [];
+      nextPointId = 1;
+      nextLinkId = 1;
+      pendingFromPoint = null;
+      pendingToPoint = null;
+      projectNameInput.value = '';
+
+      if (trackWatchId != null) {
+        navigator.geolocation.clearWatch(trackWatchId);
+        trackWatchId = null;
+      }
+      isTracking = false;
+      currentTrack = [];
+      startTrackBtn.disabled = false;
+      stopTrackBtn.disabled = true;
+
+      try {
+        localStorage.removeItem(STORAGE_KEY);
+      } catch (e) {
+        console.warn('Could not clear localStorage:', e);
+      }
+      isDirty = false;
+      lastSavedAt = null;
+      renderInventory();
+      layoutPointsToCanvas();
+      drawCanvas();
+      updateAutosaveIndicator();
+      setStatus('Session cleared.');
+    }
+
+    function toRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function haversineDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371000;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function distanceFeetBetweenPoints(p1, p2) {
+      const meters = haversineDistanceMeters(p1.lat, p1.lon, p2.lat, p2.lon);
+      return meters * 3.28084;
+    }
+
+    function addPoint(name, lat, lon) {
+      points.push({
+        id: nextPointId++,
+        name: name || ('Point ' + nextPointId),
+        lat: lat,
+        lon: lon,
+        x: null,
+        y: null
+      });
+      renderInventory();
+      markDirty();
+    }
+
+    function deletePoint(id) {
+      links = links.filter(l => l.fromId !== id && l.toId !== id);
+      points = points.filter(p => p.id !== id);
+      pendingFromPoint = null;
+      pendingToPoint = null;
+      renderInventory();
+      markDirty();
+    }
+
+    function addLink(name, fromPt, toPt, distanceFeet, buttonCapture) {
+      links.push({
+        id: nextLinkId++,
+        name: name || '',
+        fromId: fromPt ? fromPt.id : null,
+        toId: toPt ? toPt.id : null,
+        distanceFeet: distanceFeet,
+        polyline: null,
+        buttonCapture: buttonCapture || null
+      });
+      renderInventory();
+      markDirty();
+    }
+
+    function deleteLink(id) {
+      links = links.filter(l => l.id !== id);
+      renderInventory();
+      markDirty();
+    }
+
+    function recalcAllLinkDistances() {
+      links.forEach(l => {
+        if (l.polyline && Array.isArray(l.polyline) && l.polyline.length > 1) {
+          let totalFeet = 0;
+          for (let i = 1; i < l.polyline.length; i++) {
+            const p1 = l.polyline[i - 1];
+            const p2 = l.polyline[i];
+            totalFeet += distanceFeetBetweenPoints(p1, p2);
+          }
+          l.distanceFeet = totalFeet;
+        } else if (l.fromId && l.toId) {
+          const fromPt = points.find(p => p.id === l.fromId);
+          const toPt = points.find(p => p.id === l.toId);
+          if (fromPt && toPt) {
+            l.distanceFeet = distanceFeetBetweenPoints(fromPt, toPt);
+          }
+        }
+      });
+    }
+
+    function resizeCanvas() {
+      const container = document.getElementById('canvasContainer');
+      const rect = container.getBoundingClientRect();
+      const width = Math.max(260, rect.width);
+      let height = 260;
+      if (window.innerHeight) {
+        height = Math.min(Math.max(220, Math.round(window.innerHeight * 0.35)), 360);
+      }
+      canvas.width = width;
+      canvas.height = height;
+      layoutPointsToCanvas();
+      drawCanvas();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(resizeCanvas, 300);
+    });
+
+    function layoutPointsToCanvas() {
+      if (points.length === 0 && links.every(l => !l.polyline || l.polyline.length === 0)) {
+        minLatGlobal = maxLatGlobal = minLonGlobal = maxLonGlobal = null;
+        return;
+      }
+
+      let minLat = Infinity, maxLat = -Infinity;
+      let minLon = Infinity, maxLon = -Infinity;
+
+      points.forEach(pt => {
+        if (pt.lat < minLat) minLat = pt.lat;
+        if (pt.lat > maxLat) maxLat = pt.lat;
+        if (pt.lon < minLon) minLon = pt.lon;
+        if (pt.lon > maxLon) maxLon = pt.lon;
+      });
+
+      links.forEach(l => {
+        if (l.polyline && Array.isArray(l.polyline)) {
+          l.polyline.forEach(v => {
+            if (v.lat < minLat) minLat = v.lat;
+            if (v.lat > maxLat) maxLat = v.lat;
+            if (v.lon < minLon) minLon = v.lon;
+            if (v.lon > maxLon) maxLon = v.lon;
+          });
+        }
+      });
+
+      if (minLat === Infinity) {
+        minLat = maxLat = 0;
+        minLon = maxLon = 0;
+      }
+
+      if (minLat === maxLat) { minLat -= 0.0001; maxLat += 0.0001; }
+      if (minLon === maxLon) { minLon -= 0.0001; maxLon += 0.0001; }
+
+      minLatGlobal = minLat;
+      maxLatGlobal = maxLat;
+      minLonGlobal = minLon;
+      maxLonGlobal = maxLon;
+
+      const width = canvas.width - CANVAS_PADDING * 2;
+      const height = canvas.height - CANVAS_PADDING * 2;
+
+      points.forEach(pt => {
+        const xNorm = (pt.lon - minLon) / (maxLon - minLon);
+        const yNorm = (pt.lat - minLat) / (maxLat - minLat);
+        pt.x = CANVAS_PADDING + xNorm * width;
+        pt.y = CANVAS_PADDING + (1 - yNorm) * height;
+      });
+    }
+
+    function drawCanvas() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.lineWidth = 2;
+      ctx.font = '11px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      // Draw links and polylines
+      links.forEach(lnk => {
+        ctx.strokeStyle = '#ffcf4a';
+
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1 &&
+            minLatGlobal !== null && maxLatGlobal !== null &&
+            minLonGlobal !== null && maxLonGlobal !== null) {
+
+          const width = canvas.width - CANVAS_PADDING * 2;
+          const height = canvas.height - CANVAS_PADDING * 2;
+
+          const projected = lnk.polyline.map(pt => {
+            const xNorm = (pt.lon - minLonGlobal) / (maxLonGlobal - minLonGlobal);
+            const yNorm = (pt.lat - minLatGlobal) / (maxLatGlobal - minLatGlobal);
+            return {
+              x: CANVAS_PADDING + xNorm * width,
+              y: CANVAS_PADDING + (1 - yNorm) * height
+            };
+          });
+
+          if (projected.length > 1) {
+            ctx.beginPath();
+            ctx.moveTo(projected[0].x, projected[0].y);
+            for (let i = 1; i < projected.length; i++) {
+              ctx.lineTo(projected[i].x, projected[i].y);
+            }
+            ctx.stroke();
+          }
+
+          const midIndex = Math.floor(projected.length / 2);
+          const midX = projected[midIndex].x;
+          const midY = projected[midIndex].y;
+          const distLabel = lnk.distanceFeet != null
+            ? Math.round(lnk.distanceFeet) + ' ft'
+            : '';
+          const label = lnk.name
+            ? lnk.name + (distLabel ? ' (' + distLabel + ')' : '')
+            : distLabel;
+          if (label) {
+            ctx.fillStyle = 'var(--text)';
+            ctx.fillText(label, midX, midY);
+          }
+
+        } else if (lnk.fromId && lnk.toId) {
+          const fromPt = points.find(p => p.id === lnk.fromId);
+          const toPt = points.find(p => p.id === lnk.toId);
+          if (!fromPt || !toPt || fromPt.x == null || toPt.x == null) return;
+
+          ctx.beginPath();
+          ctx.moveTo(fromPt.x, fromPt.y);
+          ctx.lineTo(toPt.x, toPt.y);
+          ctx.stroke();
+
+          const midX = (fromPt.x + toPt.x) / 2;
+          const midY = (fromPt.y + toPt.y) / 2;
+          const distLabel = lnk.distanceFeet != null
+            ? Math.round(lnk.distanceFeet) + ' ft'
+            : '';
+          const label = lnk.name
+            ? lnk.name + (distLabel ? ' (' + distLabel + ')' : '')
+            : distLabel;
+          if (label) {
+            ctx.fillStyle = 'var(--text)';
+            ctx.fillText(label, midX, midY);
+          }
+        }
+      });
+
+      // Draw points
+      const radius = 10;
+      points.forEach(pt => {
+        if (pt.x == null || pt.y == null) return;
+        ctx.beginPath();
+        ctx.fillStyle = '#E9C137';
+        ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#000000';
+        ctx.stroke();
+
+        const label = pt.name || ('Point ' + pt.id);
+        ctx.fillStyle = 'var(--text)';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, pt.x + radius + 3, pt.y);
+      });
+
+      if (pendingFromPoint && pendingFromPoint.x != null) {
+        ctx.beginPath();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#00ff9c';
+        ctx.arc(pendingFromPoint.x, pendingFromPoint.y, radius + 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+      }
+    }
+
+    function getPointAtCanvasCoords(x, y) {
+      const radius = 18;
+      for (const pt of points) {
+        if (pt.x == null || pt.y == null) continue;
+        const dx = x - pt.x;
+        const dy = y - pt.y;
+        if (dx * dx + dy * dy <= radius * radius) {
+          return pt;
+        }
+      }
+      return null;
+    }
+
+    function renderInventory() {
+      inventoryTbody.innerHTML = '';
+      let rowIndex = 1;
+
+      points.forEach(pt => {
+        const tr = document.createElement('tr');
+
+        const idxTd = document.createElement('td');
+        idxTd.textContent = rowIndex++;
+        tr.appendChild(idxTd);
+
+        const typeTd = document.createElement('td');
+        typeTd.textContent = '●';
+        tr.appendChild(typeTd);
+
+        const nameTd = document.createElement('td');
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = pt.name;
+        nameInput.className = 'name-input';
+        nameInput.addEventListener('input', () => {
+          pt.name = nameInput.value;
+          drawCanvas();
+          markDirty();
+        });
+        nameTd.appendChild(nameInput);
+        tr.appendChild(nameTd);
+
+        const colATd = document.createElement('td');
+        const latInput = document.createElement('input');
+        latInput.type = 'number';
+        latInput.step = 'any';
+        latInput.value = pt.lat;
+        latInput.className = 'coord-input';
+        latInput.addEventListener('input', () => {
+          const val = parseFloat(latInput.value);
+          if (!isNaN(val)) {
+            pt.lat = val;
+            layoutPointsToCanvas();
+            recalcAllLinkDistances();
+            renderInventory();
+            markDirty();
+          }
+        });
+        colATd.appendChild(latInput);
+        tr.appendChild(colATd);
+
+        const colBTd = document.createElement('td');
+        const lonInput = document.createElement('input');
+        lonInput.type = 'number';
+        lonInput.step = 'any';
+        lonInput.value = pt.lon;
+        lonInput.className = 'coord-input';
+        lonInput.addEventListener('input', () => {
+          const val = parseFloat(lonInput.value);
+          if (!isNaN(val)) {
+            pt.lon = val;
+            layoutPointsToCanvas();
+            recalcAllLinkDistances();
+            renderInventory();
+            markDirty();
+          }
+        });
+        colBTd.appendChild(lonInput);
+        tr.appendChild(colBTd);
+
+        const distTd = document.createElement('td');
+        distTd.textContent = '';
+        tr.appendChild(distTd);
+
+        const actionsTd = document.createElement('td');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Del';
+        deleteBtn.className = 'danger';
+        deleteBtn.style.width = 'auto';
+        deleteBtn.addEventListener('click', () => {
+          deletePoint(pt.id);
+        });
+        actionsTd.appendChild(deleteBtn);
+        tr.appendChild(actionsTd);
+
+        inventoryTbody.appendChild(tr);
+      });
+
+      links.forEach(lnk => {
+        const tr = document.createElement('tr');
+
+        const idxTd = document.createElement('td');
+        idxTd.textContent = rowIndex++;
+        tr.appendChild(idxTd);
+
+        const typeTd = document.createElement('td');
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1) {
+          typeTd.textContent = '≋';
+        } else if (lnk.buttonCapture) {
+          typeTd.textContent = '◉';
+        } else {
+          typeTd.textContent = '━';
+        }
+        tr.appendChild(typeTd);
+
+        const nameTd = document.createElement('td');
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.value = lnk.name || '';
+        nameInput.className = 'name-input';
+        nameInput.addEventListener('input', () => {
+          lnk.name = nameInput.value;
+          drawCanvas();
+          markDirty();
+        });
+        nameTd.appendChild(nameInput);
+        tr.appendChild(nameTd);
+
+        const colATd = document.createElement('td');
+        const colBTd = document.createElement('td');
+
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1) {
+          colATd.textContent = 'Polyline';
+          colBTd.textContent = `${lnk.polyline.length} pts`;
+        } else if (lnk.buttonCapture) {
+          colATd.textContent = 'Button';
+          colBTd.textContent = lnk.buttonCapture;
+        } else {
+          const fromPt = points.find(p => p.id === lnk.fromId);
+          const toPt = points.find(p => p.id === lnk.toId);
+          colATd.textContent = fromPt ? (fromPt.name || ('Point ' + fromPt.id)) : '(deleted)';
+          colBTd.textContent = toPt ? (toPt.name || ('Point ' + toPt.id)) : '(deleted)';
+        }
+
+        tr.appendChild(colATd);
+        tr.appendChild(colBTd);
+
+        const distTd = document.createElement('td');
+        distTd.textContent = lnk.distanceFeet != null
+          ? Math.round(lnk.distanceFeet) + ' ft'
+          : '';
+        tr.appendChild(distTd);
+
+        const actionsTd = document.createElement('td');
+        const deleteBtn = document.createElement('button');
+        deleteBtn.textContent = 'Del';
+        deleteBtn.className = 'danger';
+        deleteBtn.style.width = 'auto';
+        deleteBtn.addEventListener('click', () => {
+          deleteLink(lnk.id);
+        });
+        actionsTd.appendChild(deleteBtn);
+        tr.appendChild(actionsTd);
+
+        inventoryTbody.appendChild(tr);
+      });
+
+      layoutPointsToCanvas();
+      drawCanvas();
+    }
+
+    canvas.addEventListener('click', (ev) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = ev.clientX - rect.left;
+      const y = ev.clientY - rect.top;
+
+      const clickedPoint = getPointAtCanvasCoords(x, y);
+      if (!clickedPoint) return;
+
+      if (!pendingFromPoint) {
+        pendingFromPoint = clickedPoint;
+      } else if (pendingFromPoint && clickedPoint.id === pendingFromPoint.id) {
+        pendingFromPoint = null;
+      } else {
+        pendingToPoint = clickedPoint;
+        openLinkModal(pendingFromPoint, pendingToPoint);
+      }
+
+      drawCanvas();
+    });
+
+    function openLinkModal(fromPt, toPt) {
+      const info = `From: ${fromPt.name || ('Point ' + fromPt.id)}\n` +
+                   `To: ${toPt.name || ('Point ' + toPt.id)}`;
+      linkModalInfo.textContent = info;
+      linkNameInputModal.value = '';
+      linkModalOverlay.classList.add('show');
+      linkNameInputModal.focus();
+    }
+
+    function closeLinkModal() {
+      linkModalOverlay.classList.remove('show');
+      pendingFromPoint = null;
+      pendingToPoint = null;
+      drawCanvas();
+    }
+
+    linkCancelBtn.addEventListener('click', () => {
+      closeLinkModal();
+    });
+
+    linkConfirmBtn.addEventListener('click', () => {
+      if (!pendingFromPoint || !pendingToPoint) {
+        closeLinkModal();
+        return;
+      }
+      const name = linkNameInputModal.value.trim();
+      const distFeet = distanceFeetBetweenPoints(pendingFromPoint, pendingToPoint);
+      addLink(name || '', pendingFromPoint, pendingToPoint, distFeet);
+      closeLinkModal();
+    });
+
+    recordBtn.addEventListener('click', () => {
+      setStatus('Requesting location...');
+
+      if (!navigator.geolocation) {
+        setStatus('Geolocation not supported in this browser.', true);
+        return;
+      }
+
+      markDirty();
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const name = pointNameInput.value.trim() || `Point ${nextPointId}`;
+          addPoint(name, lat, lon);
+          pointNameInput.value = '';
+          setStatus(`Recorded: ${name} (Lat: ${lat.toFixed(6)}, Lon: ${lon.toFixed(6)})`);
+        },
+        (err) => {
+          setStatus('Error getting location: ' + err.message, true);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+
+    startTrackBtn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        alert('Geolocation not supported in this browser.');
+        return;
+      }
+      if (isTracking) return;
+
+      isTracking = true;
+      currentTrack = [];
+      startTrackBtn.disabled = true;
+      stopTrackBtn.disabled = false;
+      setStatus('Tracking...');
+
+      trackWatchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+
+          if (currentTrack.length === 0) {
+            currentTrack.push({ lat, lon });
+          } else {
+            const last = currentTrack[currentTrack.length - 1];
+            const dLat = lat - last.lat;
+            const dLon = lon - last.lon;
+            const approxDistDeg = Math.sqrt(dLat * dLat + dLon * dLon);
+            if (approxDistDeg >= MIN_TRACK_DELTA_DEGREES) {
+              currentTrack.push({ lat, lon });
+            }
+          }
+        },
+        (err) => {
+          console.warn('Track error:', err.message);
+          alert('Tracking error: ' + err.message);
+          stopTrackingAndFinalize(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+
+    stopTrackBtn.addEventListener('click', () => {
+      stopTrackingAndFinalize(true);
+    });
+
+    function stopTrackingAndFinalize(shouldCreateLink) {
+      if (!isTracking) return;
+
+      isTracking = false;
+      startTrackBtn.disabled = false;
+      stopTrackBtn.disabled = true;
+
+      if (trackWatchId != null) {
+        navigator.geolocation.clearWatch(trackWatchId);
+        trackWatchId = null;
+      }
+
+      if (!shouldCreateLink) {
+        currentTrack = [];
+        setStatus('Tracking cancelled.');
+        return;
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lon = pos.coords.longitude;
+
+            if (currentTrack.length === 0) {
+              currentTrack.push({ lat, lon });
+            } else {
+              const last = currentTrack[currentTrack.length - 1];
+              const dLat = lat - last.lat;
+              const dLon = lon - last.lon;
+              const approxDistDeg = Math.sqrt(dLat * dLat + dLon * dLon);
+              if (approxDistDeg >= MIN_TRACK_DELTA_DEGREES) {
+                currentTrack.push({ lat, lon });
+              }
+            }
+
+            finalizeCurrentTrack();
+          },
+          (err) => {
+            console.warn('Final track position error:', err.message);
+            finalizeCurrentTrack();
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 0
+          }
+        );
+      } else {
+        finalizeCurrentTrack();
+      }
+    }
+
+    function finalizeCurrentTrack() {
+      if (currentTrack.length < 2) {
+        alert('Not enough vertices captured to create a track.');
+        currentTrack = [];
+        setStatus('Track cancelled.');
+        return;
+      }
+
+      const defaultName = `Track ${nextLinkId}`;
+      const name = window.prompt('Name for this track?', defaultName) || defaultName;
+
+      let totalFeet = 0;
+      for (let i = 1; i < currentTrack.length; i++) {
+        const p1 = currentTrack[i - 1];
+        const p2 = currentTrack[i];
+        totalFeet += distanceFeetBetweenPoints(p1, p2);
+      }
+
+      links.push({
+        id: nextLinkId++,
+        name: name,
+        fromId: null,
+        toId: null,
+        distanceFeet: totalFeet,
+        polyline: currentTrack.map(p => ({ lat: p.lat, lon: p.lon })),
+        buttonCapture: null
+      });
+
+      currentTrack = [];
+      setStatus('Track recorded.');
+      renderInventory();
+      markDirty();
+    }
+
+    // Button management
+    function parseBulkButtons(input) {
+      return input
+        .split(/[\n,]+/)
+        .map(s => s.trim())
+        .filter(Boolean);
+    }
+
+    function bulkAddButtons() {
+      const input = bulkButtonInputEl.value.trim();
+
+      if (!input) {
+        setStatus('Enter one or more button labels before adding.', true);
+        return;
+      }
+
+      const parsed = parseBulkButtons(input);
+      if (!parsed.length) {
+        setStatus('No valid button labels found.', true);
+        return;
+      }
+
+      let addedCount = 0;
+      let skippedCount = 0;
+
+      parsed.forEach(label => {
+        if (!buttons.includes(label)) {
+          buttons.push(label);
+          addedCount++;
+        } else {
+          skippedCount++;
+        }
+      });
+
+      localStorage.setItem(BUTTON_STORAGE_KEY, JSON.stringify(buttons));
+      renderButtons();
+      bulkButtonInputEl.value = '';
+      markDirty();
+
+      if (addedCount && skippedCount) {
+        setStatus(`Added ${addedCount} button(s). Skipped ${skippedCount} duplicate(s).`);
+      } else if (addedCount) {
+        setStatus(`Added ${addedCount} button(s).`);
+      } else {
+        setStatus('All entered button labels were duplicates.', true);
+      }
+    }
+
+    function clearAllButtons() {
+      if (!confirm('Delete all button labels?')) return;
+      buttons = [];
+      localStorage.setItem(BUTTON_STORAGE_KEY, JSON.stringify(buttons));
+      renderButtons();
+      setStatus('All button labels deleted.');
+      markDirty();
+    }
+
+    function editButton(index) {
+      const current = buttons[index];
+      const updated = prompt('Edit button label:', current);
+      if (updated === null) return;
+
+      const trimmed = updated.trim();
+      if (!trimmed) {
+        setStatus('Button label cannot be empty.', true);
+        return;
+      }
+
+      if (buttons.some((b, i) => i !== index && b === trimmed)) {
+        setStatus('Another button already has that name.', true);
+        return;
+      }
+
+      buttons[index] = trimmed;
+      localStorage.setItem(BUTTON_STORAGE_KEY, JSON.stringify(buttons));
+      renderButtons();
+      setStatus(`Updated button "${current}" to "${trimmed}".`);
+      markDirty();
+    }
+
+    function deleteButton(index) {
+      const label = buttons[index];
+      if (!confirm(`Delete button "${label}"?`)) return;
+      buttons.splice(index, 1);
+      localStorage.setItem(BUTTON_STORAGE_KEY, JSON.stringify(buttons));
+      renderButtons();
+      setStatus(`Deleted button "${label}".`);
+      markDirty();
+    }
+
+    function renderButtons() {
+      buttonManagerList.innerHTML = '';
+      captureButtons.innerHTML = '';
+
+      if (!buttons.length) {
+        buttonManagerList.innerHTML = '<div class="small-text">No buttons defined.</div>';
+        captureButtons.innerHTML = '<div class="small-text">Add at least one button to start capturing points.</div>';
+        return;
+      }
+
+      buttons.forEach((label, index) => {
+        const managerRow = document.createElement('div');
+        managerRow.className = 'button-row';
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = label;
+        input.readOnly = true;
+
+        const editBtn = document.createElement('button');
+        editBtn.textContent = 'Edit';
+        editBtn.className = 'secondary';
+        editBtn.addEventListener('click', () => editButton(index));
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Delete';
+        delBtn.className = 'danger';
+        delBtn.addEventListener('click', () => deleteButton(index));
+
+        managerRow.appendChild(input);
+        managerRow.appendChild(editBtn);
+        managerRow.appendChild(delBtn);
+        buttonManagerList.appendChild(managerRow);
+
+        const captureBtn = document.createElement('button');
+        captureBtn.textContent = label;
+        captureBtn.className = 'primary';
+        captureBtn.addEventListener('click', () => captureLocation(label));
+        captureButtons.appendChild(captureBtn);
+      });
+    }
+
+    function captureLocation(buttonLabel) {
+      if (!navigator.geolocation) {
+        setStatus('Geolocation is not supported by this browser.', true);
+        return;
+      }
+
+      setStatus(`Getting location for "${buttonLabel}"...`);
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = parseFloat(position.coords.latitude.toFixed(5));
+          const lon = parseFloat(position.coords.longitude.toFixed(5));
+
+          addLink(buttonLabel, null, null, 0, buttonLabel);
+          setStatus(`Recorded "${buttonLabel}" at ${lat}, ${lon}.`);
+        },
+        (error) => {
+          let msg = 'Unable to retrieve location.';
+          if (error.code === 1) msg = 'Location permission denied.';
+          if (error.code === 2) msg = 'Location unavailable.';
+          if (error.code === 3) msg = 'Location request timed out.';
+          setStatus(msg, true);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    exportKmlBtn.addEventListener('click', () => {
+      if (points.length === 0 && links.every(l => !l.polyline || l.polyline.length === 0)) {
+        setStatus('No points or tracks to export.', true);
+        return;
+      }
+
+      const projectNameRaw = projectNameInput.value.trim();
+      const projectName = projectNameRaw || 'Smart Walkout Project';
+      const dateStamp = getDateStampForFilename();
+      const safeProjectNameForFile = projectName.replace(/[^a-zA-Z0-9_-]+/g, '_');
+
+      const kmlHeader =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<kml xmlns="http://www.opengis.net/kml/2.2">\n` +
+        `<Document>\n` +
+        `  <name>${escapeXml(projectName)}</name>\n` +
+        `  <Folder>\n` +
+        `    <name>${escapeXml(projectName)}</name>\n`;
+
+      let stationsFolder =
+        `    <Folder>\n` +
+        `      <name>Stations</name>\n`;
+
+      points.forEach((pt, index) => {
+        stationsFolder +=
+          `      <Placemark>\n` +
+          `        <name>${escapeXml(pt.name || 'Point ' + (index + 1))}</name>\n` +
+          `        <Point>\n` +
+          `          <coordinates>${pt.lon},${pt.lat},0</coordinates>\n` +
+          `        </Point>\n` +
+          `      </Placemark>\n`;
+      });
+
+      stationsFolder +=
+        `    </Folder>\n`;
+
+      let linesFolder =
+        `    <Folder>\n` +
+        `      <name>Lines</name>\n`;
+
+      links.forEach((lnk, index) => {
+        let coordsText = '';
+
+        if (lnk.polyline && Array.isArray(lnk.polyline) && lnk.polyline.length > 1) {
+          coordsText = lnk.polyline
+            .map(p => `${p.lon},${p.lat},0`)
+            .join(' ');
+        } else if (lnk.fromId && lnk.toId) {
+          const fromPt = points.find(p => p.id === lnk.fromId);
+          const toPt = points.find(p => p.id === lnk.toId);
+          if (!fromPt || !toPt) return;
+          coordsText = `${fromPt.lon},${fromPt.lat},0 ${toPt.lon},${toPt.lat},0`;
+        } else if (lnk.buttonCapture) {
+          return;
+        } else {
+          return;
+        }
+
+        const distFeet = lnk.distanceFeet != null
+          ? Math.round(lnk.distanceFeet)
+          : null;
+
+        const name = lnk.name && lnk.name.length > 0
+          ? lnk.name
+          : `Link ${index + 1}`;
+
+        const description = distFeet != null
+          ? `Distance: ${distFeet} ft`
+          : '';
+
+        linesFolder +=
+          `      <Placemark>\n` +
+          `        <name>${escapeXml(name)}</name>\n` +
+          (description
+            ? `        <description>${escapeXml(description)}</description>\n`
+            : '') +
+          `        <Style>\n` +
+          `          <LineStyle>\n` +
+          `            <color>ff37c1e9</color>\n` +
+          `            <width>3</width>\n` +
+          `          </LineStyle>\n` +
+          `        </Style>\n` +
+          `        <LineString>\n` +
+          `          <tessellate>1</tessellate>\n` +
+          `          <coordinates>${coordsText}</coordinates>\n` +
+          `        </LineString>\n` +
+          `      </Placemark>\n`;
+      });
+
+      linesFolder +=
+        `    </Folder>\n`;
+
+      const kmlFooter =
+        `  </Folder>\n` +
+        `</Document>\n` +
+        `</kml>\n`;
+
+      const kmlContent = kmlHeader + stationsFolder + linesFolder + kmlFooter;
+
+      const blob = new Blob([kmlContent], { type: 'application/vnd.google-earth.kml+xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${safeProjectNameForFile}_${dateStamp}.kml`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('KML exported.');
+    });
+
+    exportCsvBtn.addEventListener('click', () => {
+      if (points.length === 0 && links.length === 0) {
+        setStatus('No data to export.', true);
+        return;
+      }
+
+      const rows = [];
+      const project = projectNameInput.value.trim() || 'project';
+      const technician = technicianNameInput.value.trim() || '';
+
+      points.forEach((pt, idx) => {
+        rows.push([
+          idx + 1,
+          'Station',
+          pt.name,
+          pt.lat,
+          pt.lon,
+          project,
+          technician,
+          new Date().toISOString()
+        ]);
+      });
+
+      links.forEach((lnk, idx) => {
+        const type = lnk.polyline ? 'Track' : (lnk.buttonCapture ? 'ButtonCapture' : 'Line');
+        const fromName = lnk.fromId ? (points.find(p => p.id === lnk.fromId)?.name || '') : '';
+        const toName = lnk.toId ? (points.find(p => p.id === lnk.toId)?.name || '') : '';
+        rows.push([
+          points.length + idx + 1,
+          type,
+          lnk.name,
+          fromName,
+          toName,
+          lnk.distanceFeet || '',
+          project,
+          technician
+        ]);
+      });
+
+      const headers = ['#', 'Type', 'Name', 'Col A', 'Col B', 'Distance', 'Project', 'Technician'];
+      const csv = [
+        headers.join(','),
+        ...rows.map(row => row.map(csvEscape).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const dateStamp = getDateStampForFilename();
+      a.download = `SmartWalkout_${dateStamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setStatus('CSV exported.');
+    });
+
+    function csvEscape(value) {
+      const str = String(value ?? '');
+      if (/[",\n]/.test(str)) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }
+
+    function escapeXml(unsafe) {
+      return unsafe.replace(/[<>&'"]/g, function (c) {
+        switch (c) {
+          case '<': return '&lt;';
+          case '>': return '&gt;';
+          case '&': return '&amp;';
+          case '\'': return '&apos;';
+          case '"': return '&quot;';
+        }
+      });
+    }
+
+    helpButton.addEventListener('click', () => {
+      helpOverlay.classList.add('show');
+    });
+
+    helpBlobCloseBtn.addEventListener('click', () => {
+      helpOverlay.classList.remove('show');
+    });
+
+    helpOverlay.addEventListener('click', (e) => {
+      if (e.target === helpOverlay) {
+        helpOverlay.classList.remove('show');
+      }
+    });
+
+    themeToggleBtn.addEventListener('click', () => {
+      const isDark = document.body.classList.toggle('dark-mode');
+      localStorage.setItem(THEME_STORAGE_KEY, isDark ? 'dark' : 'light');
+    });
+
+    function applySavedTheme() {
+      const savedTheme = localStorage.getItem(THEME_STORAGE_KEY);
+      if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+      } else {
+        document.body.classList.remove('dark-mode');
+      }
+    }
+
+    clearSessionBtn.addEventListener('click', clearSession);
+
+    loadState();
+    applySavedTheme();
+    renderButtons();
+    renderInventory();
+    resizeCanvas();
+
+    isDirty = false;
+    updateAutosaveIndicator();
+  </script>
+</body>
+</html>
