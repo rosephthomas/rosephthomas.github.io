@@ -60,6 +60,18 @@
   body.dark input[type="text"], body.dark input[type="number"], body.dark input[type="date"] {
     border-color: var(--border-dark);
   }
+  .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    font-weight: normal;
+    margin-top: 0.2rem;
+    cursor: pointer;
+  }
+  .checkbox-label input[type="checkbox"] {
+    cursor: pointer;
+  }
   .field-row {
     display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;
   }
@@ -191,7 +203,6 @@
       font-size: 1.1rem;
     }
   }
-
 </style>
 </head>
 <body>
@@ -217,7 +228,10 @@
     <div class="field-row">
       <div>
         <label for="serialNumber">Serial Number</label>
-        <input type="text" id="serialNumber" placeholder="Cable serial #" maxlength="50" />
+        <input type="text" id="serialNumber" placeholder="Cable serial #" maxlength="50" style="margin-bottom: 0.2rem;" />
+        <label class="checkbox-label">
+          <input type="checkbox" id="stripSpacesToggle" checked /> Strip spaces from serial #
+        </label>
       </div>
       <div>
         <label for="footageMark">Footage Mark</label>
@@ -302,17 +316,15 @@
     <div id="helpModalDesc">
       <p>This app allows you to record fiber optic cable data points with GPS coordinates for location correlation.</p>
       <ul>
-        <li><strong>Project Name:</strong> Name your project. This will appear in export filenames.</li>
-        <li><strong>Data Fields:</strong> Fiber Count, Cable Brand, Serial Number, Footage Mark, Date Stamp are all optional. Enter what is visible.</li>
-        <li><strong>Record / Add Location:</strong> Tap this button to save the current data with GPS coordinates. GPS is required and the app will keep prompting if unavailable.</li>
+        <li><strong>Project Name:</strong> Name your project. Persists across entries and appears in export filenames.</li>
+        <li><strong>Strip Spaces Option:</strong> When checked, all whitespace will automatically be removed from recorded serial numbers.</li>
+        <li><strong>Data Fields:</strong> All form fields persist across entries so you can log progressive footage marks quickly without re-entering unchanged cable attributes.</li>
+        <li><strong>Record / Add Location:</strong> Tap this button to save the current data with GPS coordinates.</li>
         <li><strong>Editing:</strong> You can edit or delete any record. Editing preserves GPS location unless you press "Recapture Location".</li>
-        <li><strong>Export Data:</strong> Exports a ZIP file containing a CSV and a KML file with your recorded data. Filenames are timestamped and use the project name.</li>
+        <li><strong>Export Data:</strong> Exports a ZIP file containing a CSV and a KML file with your recorded data.</li>
         <li><strong>Clear All:</strong> Clears all saved records after confirmation.</li>
-        <li><strong>Light/Dark Theme:</strong> Toggle between light and dark modes for a clean, matte paper look.</li>
-        <li>Coordinates are rounded to 4 decimal places (~30 feet accuracy).</li>
       </ul>
       <p>The app stores your data locally in the browser, so data won't be lost if you reload or close and reopen the page.</p>
-      <p>Works offline after first load. Compatible with Android, iPhone, and desktop browsers.</p>
     </div>
     <button class="close-btn" id="closeHelpBtn">Close</button>
   </div>
@@ -324,20 +336,17 @@
 
   // Utility Functions
   const sanitizeFilename = (name) => {
-    // Remove chars: \ / : * ? " < > | and control codes
     return name.replace(/[\\\/:*?"<>|\x00-\x1F]/g, '_').trim() || 'project';
   };
 
   const isoDate = (dt) => dt.toISOString().slice(0,10);
   const isoDateTime = (dt) => dt.toISOString().slice(0,19).replace('T','_').replace(/:/g, '-');
 
-  // Round coord to 4 decimal places
   const roundCoord4 = (num) => {
     if (typeof num !== 'number' || isNaN(num)) return null;
     return Math.round(num * 10000) / 10000;
   };
 
-  // CSV escaping: wrap in quotes if contains comma, newlines or quotes; double quotes inside.
   const csvEscape = (str) => {
     if (str == null) return '';
     str = str.toString();
@@ -347,20 +356,8 @@
     return str;
   };
 
-  // ZIP library from https://stuk.github.io/jszip/ 3.10.0 minified version embedded for offline use
-  // Here we'll embed a minimal jszip.min.js from CDN inside a script tag for simplicity.
-  // Because we can't fetch CDN, embed minified code as a blob inside script tag and eval or inline.
-  // For brevity here, I will embed a minified version as a data URI then load it dynamically.
   const zipLibUrl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
 
-  // For offline offline mode: embed the minified zip lib as a base64 string (compressed to save space)
-  const jszipBase64 = "UEsDBBQAAAAIAAS5t0rW95g62bwAAOxMAAAJABwBqAHN6aXAuY29tClBLAQIUABQAAAAIAAS5t0rW95g62bwAAOxMAAAJABgAAAAAAAAAAACkgQAAAABqc3ppcC5jb20KACAAAAAAAAAAAC9QSwUGAAAAAAQABADRAAAAJwAAAAAA";
-
-  // We'll use dynamic import by creating a Blob URL for the base64 decoded code or load it from official CDN.
-  // Because local offline is priority and the embedded version above is just empty, let's just create the links at runtime.
-  // For now, for this demo, we'll load from CDN given environment constraints.
-
-  // Wait for external jszip
   const loadJSZip = () => {
     return new Promise((resolve, reject) => {
       if (window.JSZip) return resolve(window.JSZip);
@@ -382,6 +379,7 @@
   const fiberCountInput = document.getElementById('fiberCount');
   const cableBrandInput = document.getElementById('cableBrand');
   const serialNumberInput = document.getElementById('serialNumber');
+  const stripSpacesToggle = document.getElementById('stripSpacesToggle');
   const footageMarkInput = document.getElementById('footageMark');
   const dateStampInput = document.getElementById('dateStamp');
   const recordBtn = document.getElementById('recordBtn');
@@ -408,17 +406,18 @@
   const helpModal = document.getElementById('helpModal');
   const closeHelpBtn = document.getElementById('closeHelpBtn');
 
-  // Data storage key
+  // Storage keys
   const STORAGE_KEY = 'fiberLocationRecords_v1';
   const STORAGE_PROJECT_KEY = 'fiberLocationProject_v1';
   const STORAGE_THEME_KEY = 'fiberLocationTheme_v1';
+  const STORAGE_STRIP_SPACES_KEY = 'fiberLocationStripSpaces_v1';
 
   // State
   let records = [];
   let editIndex = null;
-  let editRecapturedCoords = null; // {lat, lng} or null if not recaptured
+  let editRecapturedCoords = null;
 
-  // Load saved theme preference
+  // Theme configuration
   const applyTheme = (theme) => {
     if (theme === 'dark') document.body.classList.add('dark');
     else document.body.classList.remove('dark');
@@ -427,13 +426,12 @@
   const currentTheme = localStorage.getItem(STORAGE_THEME_KEY) || 'light';
   applyTheme(currentTheme);
 
-  // Toggle theme
   toggleThemeBtn.addEventListener('click', () => {
     let newTheme = document.body.classList.contains('dark') ? 'light' : 'dark';
     applyTheme(newTheme);
   });
 
-  // Load saved data
+  // Load persistent settings & data
   function loadData() {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -446,20 +444,30 @@
       if (savedProject) projectNameInput.value = savedProject;
     } catch {}
 
+    try {
+      const savedStripSetting = localStorage.getItem(STORAGE_STRIP_SPACES_KEY);
+      if (savedStripSetting !== null) {
+        stripSpacesToggle.checked = savedStripSetting === 'true';
+      }
+    } catch {}
+
     renderTable();
   }
 
-  // Save data to localStorage
   function saveData() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
   }
 
-  // Save project name persistently
+  // Persistent settings listeners
   projectNameInput.addEventListener('input', () => {
     localStorage.setItem(STORAGE_PROJECT_KEY, projectNameInput.value);
   });
 
-  // Clear error message
+  stripSpacesToggle.addEventListener('change', () => {
+    localStorage.setItem(STORAGE_STRIP_SPACES_KEY, stripSpacesToggle.checked);
+  });
+
+  // Error handling
   function clearError() {
     errorMsg.style.display = 'none';
     errorMsg.textContent = '';
@@ -469,7 +477,7 @@
     errorMsg.style.display = 'block';
   }
 
-  // Render records table
+  // Table Rendering
   function renderTable() {
     recordsBody.innerHTML = '';
     if (records.length === 0) {
@@ -532,12 +540,10 @@
       actionsTd.appendChild(delBtn);
 
       tr.appendChild(actionsTd);
-
       recordsBody.appendChild(tr);
     });
   }
 
-  // Clear all records with confirmation
   clearAllBtn.addEventListener('click', () => {
     if (confirm('Are you sure you want to clear ALL records? This action cannot be undone.')) {
       records = [];
@@ -547,7 +553,6 @@
     }
   });
 
-  // Delete record
   function deleteRecord(idx) {
     if (confirm(`Delete entry #${idx + 1}?`)) {
       records.splice(idx,1);
@@ -557,7 +562,7 @@
     }
   }
 
-  // Open edit modal
+  // Modal Functions
   function openEditModal(idx) {
     clearEditError();
     editIndex = idx;
@@ -569,11 +574,9 @@
     editFootageMarkInput.value = rec.footageMark ?? '';
     editDateStampInput.value = rec.dateStamp ?? '';
     editModal.classList.add('active');
-    // Focus first input
     editFiberCountInput.focus();
   }
 
-  // Close edit modal
   function closeEditModal() {
     editModal.classList.remove('active');
     editIndex = null;
@@ -581,7 +584,6 @@
     clearEditError();
   }
 
-  // Clear edit error
   function clearEditError() {
     editErrorMsg.style.display = 'none';
     editErrorMsg.textContent = '';
@@ -591,7 +593,6 @@
     editErrorMsg.style.display = 'block';
   }
 
-  // Recapture location in edit modal
   recaptureLocationBtn.addEventListener('click', () => {
     clearEditError();
     if (!navigator.geolocation) {
@@ -614,249 +615,3 @@
         recaptureLocationBtn.textContent = 'Recapture Location';
         recaptureLocationBtn.disabled = false;
       },
-      {enableHighAccuracy:true, timeout:15000}
-    );
-  });
-
-  // Save edit form
-  editForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    clearEditError();
-    if (editIndex === null || editIndex < 0 || editIndex >= records.length) {
-      setEditError('Invalid edit state.');
-      return;
-    }
-    // Save edited fields
-    const rec = records[editIndex];
-    rec.fiberCount = parseOptionalNumber(editFiberCountInput.value);
-    rec.cableBrand = emptyToNull(editCableBrandInput.value);
-    rec.serialNumber = emptyToNull(editSerialNumberInput.value);
-    rec.footageMark = emptyToNull(editFootageMarkInput.value);
-    rec.dateStamp = emptyToNull(editDateStampInput.value);
-    if (editRecapturedCoords) {
-      rec.latitude = editRecapturedCoords.latitude;
-      rec.longitude = editRecapturedCoords.longitude;
-    }
-    saveData();
-    renderTable();
-    closeEditModal();
-  });
-
-  // Cancel edit modal
-  cancelEditBtn.addEventListener('click', (e) => {
-    e.preventDefault();
-    closeEditModal();
-  });
-
-  // Helpers
-  const parseOptionalNumber = (val) => {
-    const n = Number(val);
-    return val.trim() === '' || isNaN(n) ? null : n;
-  };
-  const emptyToNull = (str) => {
-    if (!str) return null;
-    const t = str.trim();
-    return t === '' ? null : t;
-  };
-
-  // Main Record / Add Location button logic
-  recordBtn.addEventListener('click', () => {
-    clearError();
-    if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser.');
-      return;
-    }
-
-    // Disable button while waiting for GPS
-    recordBtn.disabled = true;
-    recordBtn.textContent = 'Getting Location…';
-
-    // Get GPS location, retry prompt if denied/unavailable
-    const getLocation = () => {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = roundCoord4(pos.coords.latitude);
-          const lng = roundCoord4(pos.coords.longitude);
-          if (lat === null || lng === null) {
-            setError('Unable to get accurate GPS location.');
-            recordBtn.disabled = false;
-            recordBtn.textContent = 'Record / Add Location';
-            return;
-          }
-          addRecord(lat, lng);
-          recordBtn.disabled = false;
-          recordBtn.textContent = 'Record / Add Location';
-        },
-        (err) => {
-          if (err.code === err.PERMISSION_DENIED) {
-            setError('GPS permission denied or unavailable. Please enable location services and try again.');
-            alert('GPS permission denied/unavailable. Please enable location services and try again.');
-          } else {
-            setError('GPS error: ' + err.message);
-            alert('GPS error: ' + err.message + '\nPlease try again.');
-          }
-          recordBtn.disabled = false;
-          recordBtn.textContent = 'Record / Add Location';
-        },
-        {enableHighAccuracy:true, timeout:15000, maximumAge:0}
-      );
-    };
-
-    getLocation();
-  });
-
-  // Add record to list & save
-  function addRecord(latitude, longitude) {
-    records.push({
-      fiberCount: parseOptionalNumber(fiberCountInput.value),
-      cableBrand: emptyToNull(cableBrandInput.value),
-      serialNumber: emptyToNull(serialNumberInput.value),
-      footageMark: emptyToNull(footageMarkInput.value),
-      dateStamp: emptyToNull(dateStampInput.value),
-      latitude,
-      longitude,
-      timestamp: new Date().toISOString()
-    });
-    saveData();
-    renderTable();
-    form.reset();
-    projectNameInput.value = projectNameInput.value.trim(); // preserve project name
-  }
-
-  // Export button handler
-  exportBtn.addEventListener('click', async () => {
-    clearError();
-    if (records.length === 0) {
-      setError('No records to export.');
-      return;
-    }
-
-    let projectName = sanitizeFilename(projectNameInput.value.trim());
-    if (!projectName) projectName = 'project';
-
-    const now = new Date();
-    const isoDateStr = isoDate(now);
-    const isoTimeStr = isoDateTime(now);
-
-    const csvFilename = `${projectName}_export_${isoTimeStr}.csv`;
-    const kmlFilename = `${projectName}_export_${isoTimeStr}.kml`;
-    const zipFilename = `${projectName}_export_${isoTimeStr}.zip`;
-
-    // Build CSV content
-    // Columns: fiberCount,cableBrand,serialNumber,footageMark,dateStamp,latitude,longitude,timestamp
-    // Using proper CSV quoting
-    const csvLines = [];
-    const header = ['Fiber Count','Cable Brand','Serial Number','Footage Mark','Date Stamp','Latitude','Longitude','Timestamp'];
-    csvLines.push(header.map(csvEscape).join(','));
-
-    for (const rec of records) {
-      csvLines.push([
-        rec.fiberCount ?? '',
-        rec.cableBrand ?? '',
-        rec.serialNumber ?? '',
-        rec.footageMark ?? '',
-        rec.dateStamp ?? '',
-        typeof rec.latitude === 'number' ? rec.latitude.toFixed(4) : '',
-        typeof rec.longitude === 'number' ? rec.longitude.toFixed(4) : '',
-        rec.timestamp ?? ''
-      ].map(csvEscape).join(','));
-    }
-    const csvContent = csvLines.join('\r\n');
-
-    // Build KML content
-    // KML header/footer and placemarks per record
-    // Name = fiber count or "N/A"
-    // Description = all data fields in semi-colon separated key:value pairs, line breaks in CDATA
-    // Escape special xml chars in description content
-
-    const escapeXml = (unsafe) => {
-      if (!unsafe) return '';
-      return unsafe.replace(/[<>&'"]/g, c => {
-        switch(c) {
-          case '<': return '&lt;';
-          case '>': return '&gt;';
-          case '&': return '&amp;';
-          case '\'': return '&apos;';
-          case '"': return '&quot;';
-          default: return c;
-        }
-      });
-    };
-
-    const kmlHeader = `<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-<Document>
-  <name>${escapeXml(projectName)}</name>
-  <description>Fiber Optic Cable Locations Export</description>
-`;
-
-    const kmlFooter = `</Document>
-</kml>`;
-
-    let placemarks = '';
-    records.forEach((rec, idx) => {
-      const name = rec.fiberCount != null ? rec.fiberCount.toString() : 'N/A';
-      const descLines = [
-        `Cable Brand: ${rec.cableBrand ?? ''}`,
-        `Serial Number: ${rec.serialNumber ?? ''}`,
-        `Footage Mark: ${rec.footageMark ?? ''}`,
-        `Date Stamp: ${rec.dateStamp ?? ''}`,
-        `Latitude: ${typeof rec.latitude === 'number' ? rec.latitude.toFixed(4) : ''}`,
-        `Longitude: ${typeof rec.longitude === 'number' ? rec.longitude.toFixed(4) : ''}`,
-        `Recorded Timestamp: ${rec.timestamp ?? ''}`
-      ].join(';\n');
-
-      placemarks += `<Placemark>
-  <name>${escapeXml(name)}</name>
-  <description><![CDATA[${descLines}]]></description>
-  <Point>
-    <coordinates>${typeof rec.longitude === 'number' ? rec.longitude.toFixed(4) : ''},${typeof rec.latitude === 'number' ? rec.latitude.toFixed(4) : ''},0</coordinates>
-  </Point>
-</Placemark>
-`;
-    });
-
-    const kmlContent = kmlHeader + placemarks + kmlFooter;
-
-    try {
-      const JSZip = await loadJSZip();
-      const zip = new JSZip();
-      zip.file(csvFilename, csvContent);
-      zip.file(kmlFilename, kmlContent);
-
-      const blob = await zip.generateAsync({type:"blob"});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = zipFilename;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        document.body.removeChild(a);
-        URL.revokeObjectURL(a.href);
-      }, 100);
-    } catch (err) {
-      setError('Export failed: ' + err.message);
-    }
-  });
-
-  // Help modal open/close
-  helpBtn.addEventListener('click', () => {
-    helpModal.classList.add('active');
-    closeHelpBtn.focus();
-  });
-  closeHelpBtn.addEventListener('click', () => helpModal.classList.remove('active'));
-  // Close modals on Escape key
-  document.addEventListener('keydown', e => {
-    if(e.key === 'Escape') {
-      if (editModal.classList.contains('active')) closeEditModal();
-      if (helpModal.classList.contains('active')) helpModal.classList.remove('active');
-    }
-  });
-
-  // Initialize
-  loadData();
-
-})();
-</script>
-</body>
-</html>
