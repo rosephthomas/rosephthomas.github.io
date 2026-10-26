@@ -128,18 +128,9 @@
   .actions button:hover {
     color: #004c99;
   }
-  .description-cell {
-    white-space: pre-wrap;
-  }
   .btn-group {
     margin-top: 1rem;
     display: flex; flex-wrap: wrap; gap: 0.8rem;
-  }
-  .footer {
-    text-align: center;
-    margin-bottom: 1.2rem;
-    font-size: 0.85rem;
-    color: #666;
   }
   .error-message {
     color: var(--error-red);
@@ -191,7 +182,6 @@
     background: #004c99;
   }
 
-  /* Responsive */
   @media (max-width: 600px) {
     .field-row > div {
       flex: 1 1 100%;
@@ -281,7 +271,7 @@
 </main>
 
 <!-- Edit Modal -->
-<div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" aria-describedby="editModalDesc">
+<div class="modal-overlay" id="editModal" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
   <div class="modal">
     <h2 id="editModalTitle">Edit Entry</h2>
     <form id="editForm" autocomplete="off">
@@ -310,10 +300,10 @@
 </div>
 
 <!-- Help Modal -->
-<div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle" aria-describedby="helpModalDesc">
+<div class="modal-overlay" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpModalTitle">
   <div class="modal">
     <h2 id="helpModalTitle">Help & Instructions</h2>
-    <div id="helpModalDesc">
+    <div>
       <p>This app allows you to record fiber optic cable data points with GPS coordinates for location correlation.</p>
       <ul>
         <li><strong>Project Name:</strong> Name your project. Persists across entries and appears in export filenames.</li>
@@ -322,6 +312,311 @@
         <li><strong>Record / Add Location:</strong> Tap this button to save the current data with GPS coordinates.</li>
         <li><strong>Editing:</strong> You can edit or delete any record. Editing preserves GPS location unless you press "Recapture Location".</li>
         <li><strong>Export Data:</strong> Exports a ZIP file containing a CSV and a KML file with your recorded data.</li>
+        <li><strong>Clear All:</strong> Clears all saved records after confirmation.</li>
+      </ul>
+      <p>The app stores your data locally in the browser, so data won't be lost if you reload or close and reopen the page.</p>
+    </div>
+    <button class="close-btn" id="closeHelpBtn">Close</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const sanitizeFilename = (name) => {
+    return name.replace(/[\\\/:*?"<>|\x00-\x1F]/g, '_').trim() || 'project';
+  };
+
+  const roundCoord4 = (num) => {
+    if (typeof num !== 'number' || isNaN(num)) return null;
+    return Math.round(num * 10000) / 10000;
+  };
+
+  const csvEscape = (str) => {
+    if (str == null) return '';
+    str = str.toString();
+    if (/["\n\r,]/.test(str)) {
+      return '"' + str.replace(/"/g, '""') + '"';
+    }
+    return str;
+  };
+
+  const zipLibUrl = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+
+  const loadJSZip = () => {
+    return new Promise((resolve, reject) => {
+      if (window.JSZip) return resolve(window.JSZip);
+      const script = document.createElement('script');
+      script.src = zipLibUrl;
+      script.async = true;
+      script.onload = () => {
+        if (window.JSZip) resolve(window.JSZip);
+        else reject(new Error('JSZip failed to load.'));
+      };
+      script.onerror = () => reject(new Error('Failed to load JSZip script.'));
+      document.head.appendChild(script);
+    });
+  };
+
+  // Elements
+  const form = document.getElementById('dataForm');
+  const projectNameInput = document.getElementById('projectName');
+  const fiberCountInput = document.getElementById('fiberCount');
+  const cableBrandInput = document.getElementById('cableBrand');
+  const serialNumberInput = document.getElementById('serialNumber');
+  const stripSpacesToggle = document.getElementById('stripSpacesToggle');
+  const footageMarkInput = document.getElementById('footageMark');
+  const dateStampInput = document.getElementById('dateStamp');
+  const recordBtn = document.getElementById('recordBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+  const helpBtn = document.getElementById('helpBtn');
+  const toggleThemeBtn = document.getElementById('toggleThemeBtn');
+  const errorMsg = document.getElementById('errorMsg');
+  const recordsBody = document.getElementById('recordsBody');
+
+  // Modal elements
+  const editModal = document.getElementById('editModal');
+  const editForm = document.getElementById('editForm');
+  const editFiberCountInput = document.getElementById('editFiberCount');
+  const editCableBrandInput = document.getElementById('editCableBrand');
+  const editSerialNumberInput = document.getElementById('editSerialNumber');
+  const editFootageMarkInput = document.getElementById('editFootageMark');
+  const editDateStampInput = document.getElementById('editDateStamp');
+  const recaptureLocationBtn = document.getElementById('recaptureLocationBtn');
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  const editErrorMsg = document.getElementById('editErrorMsg');
+
+  const helpModal = document.getElementById('helpModal');
+  const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+  // Storage keys
+  const STORAGE_KEY = 'fiberLocationRecords_v1';
+  const STORAGE_PROJECT_KEY = 'fiberLocationProject_v1';
+  const STORAGE_THEME_KEY = 'fiberLocationTheme_v1';
+  const STORAGE_STRIP_SPACES_KEY = 'fiberLocationStripSpaces_v1';
+
+  // State
+  let records = [];
+  let editIndex = null;
+  let editRecapturedCoords = null;
+
+  // Theme configuration
+  const applyTheme = (theme) => {
+    if (theme === 'dark') document.body.classList.add('dark');
+    else document.body.classList.remove('dark');
+    localStorage.setItem(STORAGE_THEME_KEY, theme);
+  };
+  applyTheme(localStorage.getItem(STORAGE_THEME_KEY) || 'light');
+
+  toggleThemeBtn.addEventListener('click', () => {
+    let newTheme = document.body.classList.contains('dark') ? 'light' : 'dark';
+    applyTheme(newTheme);
+  });
+
+  function loadData() {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      records = saved ? JSON.parse(saved) : [];
+    } catch {
+      records = [];
+    }
+    try {
+      const savedProject = localStorage.getItem(STORAGE_PROJECT_KEY);
+      if (savedProject) projectNameInput.value = savedProject;
+    } catch {}
+
+    try {
+      const savedStripSetting = localStorage.getItem(STORAGE_STRIP_SPACES_KEY);
+      if (savedStripSetting !== null) {
+        stripSpacesToggle.checked = savedStripSetting === 'true';
+      }
+    } catch {}
+
+    renderTable();
+  }
+
+  function saveData() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  }
+
+  projectNameInput.addEventListener('input', () => {
+    localStorage.setItem(STORAGE_PROJECT_KEY, projectNameInput.value);
+  });
+
+  stripSpacesToggle.addEventListener('change', () => {
+    localStorage.setItem(STORAGE_STRIP_SPACES_KEY, stripSpacesToggle.checked);
+  });
+
+  function clearError() {
+    errorMsg.style.display = 'none';
+    errorMsg.textContent = '';
+  }
+  function setError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.style.display = 'block';
+  }
+
+  function renderTable() {
+    recordsBody.innerHTML = '';
+    if (records.length === 0) {
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 8;
+      td.style.textAlign = 'center';
+      td.textContent = 'No records yet.';
+      tr.appendChild(td);
+      recordsBody.appendChild(tr);
+      return;
+    }
+    records.forEach((rec, idx) => {
+      const tr = document.createElement('tr');
+
+      const fiberCountTd = document.createElement('td');
+      fiberCountTd.textContent = rec.fiberCount ?? '';
+      tr.appendChild(fiberCountTd);
+
+      const cableBrandTd = document.createElement('td');
+      cableBrandTd.textContent = rec.cableBrand ?? '';
+      tr.appendChild(cableBrandTd);
+
+      const serialNumberTd = document.createElement('td');
+      serialNumberTd.textContent = rec.serialNumber ?? '';
+      tr.appendChild(serialNumberTd);
+
+      const footageMarkTd = document.createElement('td');
+      footageMarkTd.textContent = rec.footageMark ?? '';
+      tr.appendChild(footageMarkTd);
+
+      const dateStampTd = document.createElement('td');
+      dateStampTd.textContent = rec.dateStamp ?? '';
+      tr.appendChild(dateStampTd);
+
+      const latTd = document.createElement('td');
+      latTd.textContent = typeof rec.latitude === 'number' ? rec.latitude.toFixed(4) : '';
+      tr.appendChild(latTd);
+
+      const lngTd = document.createElement('td');
+      lngTd.textContent = typeof rec.longitude === 'number' ? rec.longitude.toFixed(4) : '';
+      tr.appendChild(lngTd);
+
+      const actionsTd = document.createElement('td');
+      actionsTd.className = 'actions';
+
+      const editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.textContent = 'Edit';
+      editBtn.title = `Edit entry #${idx + 1}`;
+      editBtn.addEventListener('click', () => openEditModal(idx));
+      actionsTd.appendChild(editBtn);
+
+      const delBtn = document.createElement('button');
+      delBtn.type = 'button';
+      delBtn.textContent = 'Delete';
+      delBtn.title = `Delete entry #${idx + 1}`;
+      delBtn.style.color = 'var(--error-red)';
+      delBtn.addEventListener('click', () => deleteRecord(idx));
+      actionsTd.appendChild(delBtn);
+
+      tr.appendChild(actionsTd);
+      recordsBody.appendChild(tr);
+    });
+  }
+
+  clearAllBtn.addEventListener('click', () => {
+    if (confirm('Are you sure you want to clear ALL records? This action cannot be undone.')) {
+      records = [];
+      saveData();
+      renderTable();
+      clearError();
+    }
+  });
+
+  function deleteRecord(idx) {
+    if (confirm(`Delete entry #${idx + 1}?`)) {
+      records.splice(idx, 1);
+      saveData();
+      renderTable();
+      clearError();
+    }
+  }
+
+  // Record / Add Location Event Listener (Fixed)
+  recordBtn.addEventListener('click', () => {
+    clearError();
+    if (!navigator.geolocation) {
+      setError('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    let serialNum = serialNumberInput.value.trim();
+    if (stripSpacesToggle.checked) {
+      serialNum = serialNum.replace(/\s+/g, '');
+    }
+
+    recordBtn.disabled = true;
+    recordBtn.textContent = 'Acquiring GPS...';
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const newRecord = {
+          fiberCount: fiberCountInput.value !== '' ? Number(fiberCountInput.value) : null,
+          cableBrand: cableBrandInput.value.trim(),
+          serialNumber: serialNum,
+          footageMark: footageMarkInput.value.trim(),
+          dateStamp: dateStampInput.value.trim(),
+          latitude: roundCoord4(pos.coords.latitude),
+          longitude: roundCoord4(pos.coords.longitude),
+          timestamp: new Date().toISOString()
+        };
+
+        records.push(newRecord);
+        saveData();
+        renderTable();
+
+        recordBtn.disabled = false;
+        recordBtn.textContent = 'Record / Add Location';
+      },
+      (err) => {
+        setError('Failed to get location: ' + err.message);
+        recordBtn.disabled = false;
+        recordBtn.textContent = 'Record / Add Location';
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    );
+  });
+
+  // Modal Functions
+  function openEditModal(idx) {
+    clearEditError();
+    editIndex = idx;
+    editRecapturedCoords = null;
+    const rec = records[idx];
+    editFiberCountInput.value = rec.fiberCount ?? '';
+    editCableBrandInput.value = rec.cableBrand ?? '';
+    editSerialNumberInput.value = rec.serialNumber ?? '';
+    editFootageMarkInput.value = rec.footageMark ?? '';
+    editDateStampInput.value = rec.dateStamp ?? '';
+    recaptureLocationBtn.textContent = 'Recapture Location';
+    editModal.classList.add('active');
+    editFiberCountInput.focus();
+  }
+
+  function closeEditModal() {
+    editModal.classList.remove('active');
+    editIndex = null;
+    editRecapturedCoords = null;
+    clearEditError();
+  }
+
+  function clearEditError() {
+    editErrorMsg.style.display = 'none';
+    editErrorMsg.textContent = '';
+  }
+  function setEditError(msg) {
+    editErrorMsg.textContent = msg;
+  h your recorded data.</li>
         <li><strong>Clear All:</strong> Clears all saved records after confirmation.</li>
       </ul>
       <p>The app stores your data locally in the browser, so data won't be lost if you reload or close and reopen the page.</p>
